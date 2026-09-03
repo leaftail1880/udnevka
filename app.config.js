@@ -1,5 +1,4 @@
 // @ts-check
-import withBuildProperties from 'expo-build-properties'
 import {
 	AndroidConfig,
 	withAndroidManifest,
@@ -12,6 +11,7 @@ const slug = 'xdnevnik'
 const name = 'XDnevnik'
 const projectId = '97163afe-5c7e-4856-ba8f-348e00aa7c04'
 
+// @ts-expect-error
 // eslint-disable-next-line no-undef
 const IS_DEV = !!process.env.DEV
 
@@ -27,7 +27,7 @@ const sentry = {
 const splashBackgroundDark = '#252525'
 const splashBackgroundLight = '#EBEAEA'
 
-/** @type {{expo: import("@expo/config-types/build/ExpoConfig.js").ExpoConfig}} */
+/** @type {{expo: import("@expo/config-types/build/ExpoConfig").ExpoConfig}} */
 const Config = {
 	expo: {
 		name: IS_DEV ? name + ' Dev Client' : name,
@@ -59,7 +59,7 @@ const Config = {
 				'REQUEST_INSTALL_PACKAGES',
 				'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
 			],
-      softwareKeyboardLayoutMode: "pan",
+			softwareKeyboardLayoutMode: 'pan',
 			edgeToEdgeEnabled: true,
 			adaptiveIcon: {
 				foregroundImage: './assets/adaptive-icon.png',
@@ -70,8 +70,11 @@ const Config = {
 		plugins: [
 			'expo-dev-client',
 			'expo-updates',
-			'expo-build-properties',
-			['@sentry/react-native/expo', sentry],
+			'expo-background-task',
+			'expo-sharing',
+			'expo-status-bar',
+			// 'expo-build-properties',
+			['@sentry/react-native', sentry],
 			[
 				'expo-splash-screen',
 				{
@@ -115,12 +118,12 @@ const Config = {
 
 Config.expo.plugins = Config.expo.plugins?.filter(Boolean)
 
-Config.expo = withBuildProperties(Config.expo, {
-	android: {
-		// enableMinifyInReleaseBuilds: true,
-		// enableShrinkResourcesInReleaseBuilds: true,
-	},
-})
+// Config.expo = withBuildProperties(Config.expo, {
+// 	android: {
+// 		// enableMinifyInReleaseBuilds: true,
+// 		// enableShrinkResourcesInReleaseBuilds: true,
+// 	},
+// })
 
 Config.expo = withGradleProperties(Config.expo, config => {
 	config.modResults.push(
