@@ -56,7 +56,4 @@ export enum Screens {
 	Totals = 'Оценки',
 	TotalsN = 'Оценки ',
 	Settings = 'Настройки',
-	UsefullTools = 'Инструменты',
-	SubjectTotals = 'Итоги по предмету',
 }
-

@@ -214,5 +214,4 @@ const Filter = observer(function Filter(props: FilterProps) {
 export type DiaryLessonProps = {
 	i: number
 	lesson: Lesson
-	navigateToLessonMarks: VoidFunction
 }
