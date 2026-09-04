@@ -1,10 +1,8 @@
-import NumberInput from '@/components/NumberInput'
 import { SelectTime } from '@/components/SelectTime'
 import { Size } from '@/components/Size'
 import SwitchSetting from '@/components/SwitchSetting'
 import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { API } from '@/services/net-school/api'
 import { getStorageKeySize, getTotalStorageSize } from '@/utils/configure'
 import { Spacings } from '@/utils/Spacings'
 import { runInAction } from 'mobx'
@@ -22,24 +20,6 @@ export default observer(function Appearance() {
 	return (
 		<ScrollView>
 			<List.Section title="Общие">
-				<View style={{ paddingHorizontal: Spacings.s2 }}>
-					<NumberInput
-						label="Timeout"
-						description="Максимальная длительность запроса, в секундах. Чем меньше значение, тем раньше приложение начнет использовать кеш вместо ожидания ответа от сервера"
-						value={API.timeoutLimit}
-						onChange={value => runInAction(() => (API.timeoutLimit = value))}
-						defaultValue={6}
-					/>
-					<NumberInput
-						label="Cache latency"
-						description="Использовать кэш если паралельных запросов больше чем это число. Полезно для оптимизации большого кол-ва запросов. 0 заставляет все запросы возвращать кеш по умолчанию."
-						value={API.useCacheOnMoreThenReqs}
-						onChange={value =>
-							runInAction(() => (API.useCacheOnMoreThenReqs = value))
-						}
-						defaultValue={6}
-					/>
-				</View>
 				<View style={{ gap: Spacings.s2 }}>
 					<SwitchSetting
 						setting="useOverrideTime"
@@ -75,15 +55,6 @@ export default observer(function Appearance() {
 			<List.Section title="Хранилище">
 				<ExportImportSettings />
 				<SizeOfCache />
-				<List.Item
-					title={
-						<Text>
-							Очистить кэш ({Object.keys(API.cache).length} значений,{' '}
-							<Size t={API.cache} />)
-						</Text>
-					}
-					onPress={() => runInAction(() => (API.cache = {}))}
-				/>
 				<Stores />
 			</List.Section>
 		</ScrollView>

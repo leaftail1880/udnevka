@@ -1,8 +1,6 @@
-import { getSubjectName } from '@/components/SubjectName'
-import { Logger } from '@/constants'
-import { StudentSettings, XSettings } from '@/models/settings'
-import { Lesson, LessonState } from '@/services/net-school/lesson'
-import { NotifyDiaryStore } from '@/services/net-school/store'
+import { XSettings } from '@/models/settings'
+import { ScheduleItem } from '@/services/mgik/api'
+import { ScheduleStore } from '@/services/mgik/store'
 import {
 	clearBackgroundInterval,
 	setBackgroundInterval,
@@ -12,7 +10,6 @@ import notifee, {
 	AndroidVisibility,
 } from '@notifee/react-native'
 import { autorun, makeAutoObservable, runInAction } from 'mobx'
-import { MarksNotificationStore } from './marks'
 
 let foregroundServiceRegistered = false
 
@@ -22,14 +19,8 @@ export const LessonNotifStore = new (class {
 	}
 
 	lessonChannelId = ''
-
-	/**
-	 * Current notification id
-	 */
 	id: undefined | string = undefined
-
 	currentLesson: undefined | string = undefined
-
 	day = new Date().getDate()
 
 	async remove(id = LessonNotifStore.id) {
@@ -46,12 +37,11 @@ export const LessonNotifStore = new (class {
 })()
 
 function enabled() {
-  const {notificationsEnabled, lessonNotifications} = XSettings
+	const { notificationsEnabled, lessonNotifications } = XSettings
 	return notificationsEnabled && lessonNotifications
 }
 
 export async function setupLessonChannel() {
-	// Show notification channels even when they are disabled
 	const lessonChannelId = await notifee.createChannel({
 		id: 'lessons',
 		name: 'Уроки',
@@ -76,64 +66,29 @@ export async function setupLessonChannel() {
 	})
 }
 
-type NotifLesson = {
-	start: ReadonlyDate
-	end: ReadonlyDate
-} & Readonly<
-	Pick<
-		Lesson,
-		| 'notifyBeforeSeconds'
-		| 'roomName'
-		| 'subjectId'
-		| 'classmeetingId'
-		| 'subjectName'
-		| 'offsetDayId'
-	>
->
-
-function lessonToNotifLesson(
-	lesson: Lesson,
-	settings: StudentSettings,
-): NotifLesson {
-	return {
-		start: lesson.start(settings),
-		end: lesson.end(settings),
-		notifyBeforeSeconds: lesson.notifyBeforeSeconds,
-		roomName: lesson.roomName,
-		subjectId: lesson.subjectId,
-		classmeetingId: lesson.classmeetingId,
-		subjectName: lesson.subjectName,
-		offsetDayId: lesson.offsetDayId,
-	}
-}
-
 let currentLessonInterval: ReturnType<typeof setBackgroundInterval>
-autorun(function notificationFromDiary() {
+autorun(function notificationFromSchedule() {
 	if (currentLessonInterval) clearBackgroundInterval(currentLessonInterval)
 	if (!enabled() || !LessonNotifStore.lessonChannelId) {
 		return LessonNotifStore.remove()
 	}
 
-	const { studentId, overrideTimeD, useOverrideTime } = XSettings
+	if (!XSettings.selectedGroup) return
 
+	const { overrideTimeD, useOverrideTime } = XSettings
 	const date = new Date(useOverrideTime ? overrideTimeD : Date.now())
-	const week = Date.week(date)
 
-	NotifyDiaryStore.withParams({
-		studentId,
-		startDate: week[0].toNetSchool(),
-		endDate: week[6].toNetSchool(),
+	ScheduleStore.withParams({
+		idGroup: XSettings.selectedGroup,
+		isDo: undefined,
 	})
 
-	const { result } = NotifyDiaryStore
+	const { result } = ScheduleStore
 	if (!result) return
 
-	const studentSettings = XSettings.forStudentOrThrow()
-	const lessons = result
-		.forDay(date.toYYYYMMDD(), studentSettings)
-		.map(lesson => lessonToNotifLesson(lesson, studentSettings))
-
-	LessonNotifStore.day
+	const dayLessons = result.filter(
+		item => item.date.toYYYYMMDD() === date.toYYYYMMDD(),
+	)
 
 	const inter = setBackgroundInterval(
 		() =>
@@ -141,28 +96,19 @@ autorun(function notificationFromDiary() {
 				if (inter !== currentLessonInterval) return
 
 				const now = useOverrideTime ? overrideTimeD : Date.now()
-
-				// just to trigger rerun of the code above and use custom subjects for new day
 				LessonNotifStore.day = new Date().getDate()
 
-				for (const [i, lesson] of lessons.entries()) {
-					try {
-						const end = lesson.end.getTime()
-						if (!end) continue // Broken data i guess
-						if (end < now) continue // Already was
+				for (const [i, lesson] of dayLessons.entries()) {
+					const end = lesson.endTime.getTime()
+					if (end < now) continue
 
-						// period - перемена
-						const previous = lessons[i - 1]
-						const { date, period } = getLessonPeriod(previous, lesson)
-						if (date.getTime() > now) continue
+					const previous = dayLessons[i - 1]
+					const { date: notifyDate, period } = getLessonPeriod(previous, lesson)
+					if (notifyDate.getTime() > now) continue
 
-						return await showNotification(lesson, now, period)
-					} catch (e) {
-						Logger.error(e)
-					}
+					return await showNotification(lesson, now, period)
 				}
 
-				// Nothing to show
 				LessonNotifStore.remove()
 			}),
 		1000,
@@ -173,65 +119,60 @@ autorun(function notificationFromDiary() {
 const second = 1000
 
 function getLessonPeriod(
-	previous: NotifLesson | undefined,
-	current: NotifLesson,
+	previous: ScheduleItem | undefined,
+	current: ScheduleItem,
 ) {
 	let period: Date | undefined
 	let date: Date
-	const notifyBeforeSeconds = current.notifyBeforeSeconds
+	const notifyBeforeSeconds = 15 * 60
 
-	// If previous lesson is in the same day, send notification in the end of the lesson
 	if (
 		previous &&
-		current.start.toYYYYMMDD() === previous.start.toYYYYMMDD() &&
-		// Only when delay between lessons is less then 15
-		(current.start.getTime() - previous.end.getTime()) / second <=
+		current.startTime.toYYYYMMDD() === previous.startTime.toYYYYMMDD() &&
+		(current.startTime.getTime() - previous.endTime.getTime()) / second <=
 			notifyBeforeSeconds
 	) {
-		date = new Date(previous.end.getTime())
-		// date.setMinutes(date.getMinutes() + 1)
-		period = new Date(current.start.getTime() - previous.end.getTime())
+		date = new Date(previous.endTime.getTime())
+		period = new Date(current.startTime.getTime() - previous.endTime.getTime())
 	} else {
-		// Send before lesson
-		date = new Date(current.start.getTime())
+		date = new Date(current.startTime.getTime())
 		date.setMinutes(date.getMinutes() - ~~(notifyBeforeSeconds / 60))
 	}
 	return { date, period }
 }
 
 async function showNotification(
-	lesson: NotifLesson,
+	lesson: ScheduleItem,
 	now: number,
 	period: Date | undefined,
 ) {
-	const lessonId = lesson.classmeetingId + '' + lesson.subjectId
-	const lessonName = getSubjectName(lesson)
+	const lessonId = lesson.id.toString()
+	const lessonName = lesson.discipline
 
-	const { state, startsAfter, progress, elapsed, remaining } = Lesson.status(
-		lesson.start.getTime(),
-		lesson.end.getTime(),
+	const status = scheduleStatus(
+		lesson.startTime.getTime(),
+		lesson.endTime.getTime(),
 		now,
 	)
 
 	let title = ''
 	title += lessonName
-	if (state === LessonState.Going) {
+	if (status.state === ScheduleState.Going) {
 		title += ' | '
-		title += remaining
+		title += status.remaining
 	}
-	if (lesson.roomName) {
+	if (lesson.auditoriumShortName) {
 		title += ' | '
-		title += lesson.roomName ?? 'Нет кабинета'
+		title += lesson.auditoriumShortName
 	}
 
 	let body = ''
-
-	body += `${lesson.start.toHHMM()} - ${lesson.end.toHHMM()}. `
-	if (state === LessonState.NotStarted) {
-		body += startsAfter
+	body += `${lesson.startTime.toHHMM()} - ${lesson.endTime.toHHMM()}. `
+	if (status.state === ScheduleState.NotStarted) {
+		body += status.startsAfter
 		if (period) body += ` Перемена ${period.getMinutes()} мин. `
-	} else if (state === LessonState.Going) {
-		body += `Прошло ${elapsed}`
+	} else if (status.state === ScheduleState.Going) {
+		body += `Прошло ${status.elapsed}`
 	}
 
 	try {
@@ -240,10 +181,7 @@ async function showNotification(
 			foregroundServiceRegistered = true
 		}
 	} catch {
-		MarksNotificationStore.log(
-			'error',
-			'Не удалось зарегистрировать сервис ПОСТОЯННЫХ уведомлений. Могут быть перебои в работе.',
-		)
+		// ignore
 	}
 
 	const notificationId = await notifee.displayNotification({
@@ -254,18 +192,12 @@ async function showNotification(
 			channelId: LessonNotifStore.lessonChannelId,
 			ongoing: true,
 			smallIcon: 'notification_icon',
-
-			// only alert when lesson notification
 			onlyAlertOnce: LessonNotifStore.currentLesson === lessonId,
 			asForegroundService: foregroundServiceRegistered,
-
 			progress:
-				state === LessonState.Going
-					? {
-							current: progress,
-							max: 100,
-						}
-					: void 0,
+				status.state === ScheduleState.Going
+					? { current: status.progress, max: 100 }
+					: undefined,
 			pressAction: { id: 'default' },
 		},
 		ios: {},
@@ -275,4 +207,50 @@ async function showNotification(
 		LessonNotifStore.id = notificationId
 		LessonNotifStore.currentLesson = lessonId
 	})
+}
+
+enum ScheduleState {
+	NotStarted,
+	Going,
+	Ended,
+}
+
+function scheduleStatus(start: number, end: number, now = Date.now()) {
+	const beforeStartMs = start - now
+	const beforeStart = separateTime(beforeStartMs)
+	const beforeEnd = separateTime(now - start)
+	const total = separateTime(end - start)
+	const progress = 100 - Math.ceil(((end - now) * 100) / (end - start))
+
+	return {
+		beforeStartMs,
+		startsAfter: `Начнется через ${toTime(beforeStart.hours, beforeStart.minutes, beforeStart.seconds)}`,
+		elapsed: `${total.hours >= 1 ? toTime(0, beforeEnd.hours, beforeEnd.minutes + 1) : toTime(beforeEnd.hours, beforeEnd.minutes + 1)}/${toTime(...(total.minutes + 1 >= 60 ? [total.hours + 1, 0] : [total.hours, total.minutes + 1]))}`,
+		remaining: toTime(
+			total.hours - beforeEnd.hours,
+			total.minutes - beforeEnd.minutes,
+			total.seconds - beforeEnd.seconds,
+		),
+		progress,
+		state:
+			now < start
+				? ScheduleState.NotStarted
+				: now <= end
+					? ScheduleState.Going
+					: ScheduleState.Ended,
+	}
+}
+
+function separateTime(ms: number) {
+	const hours = Math.floor(ms / (1000 * 60 * 60))
+	const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+	const seconds = Math.floor((ms % (1000 * 60)) / 1000)
+	return { hours, minutes, seconds }
+}
+
+function toTime(...args: number[]) {
+	return args
+		.filter((e, i) => (i === 0 ? e !== 0 : true))
+		.map(e => e.toString().padStart(2, '0'))
+		.join(':')
 }

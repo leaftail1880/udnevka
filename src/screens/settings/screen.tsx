@@ -1,8 +1,5 @@
-import Loading from '@/components/Loading'
 import { SettingsJumpNavigation } from '@/components/Navigate'
-import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { API } from '@/services/net-school/api'
 import { StackScreenProps } from '@react-navigation/stack'
 import { observer } from 'mobx-react-lite'
 import { ScrollView, View } from 'react-native'
@@ -16,8 +13,6 @@ import TermsAndConditions from './support/TermsAndConditions'
 import MicroUpdate from './update/micro-update'
 import UpdatesScreen from './update/screen'
 
-import SelectModal from '@/components/SelectModal'
-import { StudentsStore } from '@/services/net-school/store'
 import { Spacings } from '@/utils/Spacings'
 import * as Application from 'expo-application'
 import { memo } from 'react'
@@ -63,11 +58,10 @@ const MainSettings = memo(function MainSettings(
 				flex: 1,
 			}}
 		>
-			<SelectStudent />
 			<SettingsJumpNavigation
 				navigation={props}
 				target={'notifs'}
-				description="О текущих уроках, о новых оценках"
+				description="О текущих уроках"
 			/>
 
 			<SettingsJumpNavigation
@@ -102,26 +96,5 @@ const MainSettings = memo(function MainSettings(
 				</HelperText>
 			</View>
 		</ScrollView>
-	)
-})
-
-const SelectStudent = observer(function SelectStudent() {
-	return API.session ? (
-		StudentsStore.fallback || (
-			<SelectModal
-				data={StudentsStore.result.map((student, index) => ({
-					value: index + '',
-					label: XSettings.fullname(student.name),
-				}))}
-				mode="list.item"
-				value={XSettings.studentIndex + ''}
-				onSelect={student =>
-					XSettings.save({ studentIndex: Number(student.value) })
-				}
-				label={'Ученик'}
-			/>
-		)
-	) : (
-		<Loading text="Для выбора ученика авторизуйтесь" />
 	)
 })

@@ -1,12 +1,6 @@
 import ErrorHandler from '@/components/ErrorHandler'
 import Loading from '@/components/Loading'
 import {
-	CacheUsed,
-	CacheableReq,
-	API as NSApi,
-	NetSchoolError,
-} from '@/services/net-school/api'
-import {
 	action,
 	autorun,
 	makeAutoObservable,
@@ -16,10 +10,11 @@ import {
 } from 'mobx'
 import { RefreshControl } from 'react-native'
 import { Logger } from '../constants'
+import { ScheduleClient } from '../services/mgik/api'
 
 export type AsyncMethod = (
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	arg: Record<string, any> & CacheableReq,
+	arg: any,
 ) => Promise<unknown>
 
 /**
@@ -56,6 +51,8 @@ export type AdditionalDeps = (
 
 const firstTimeCacheUsedFor = new Set<string>()
 
+type A = FunctionsFromObject<ScheduleClient>
+
 export class AsyncStore<
 	Source extends object,
 	MethodName extends keyof FunctionsFromObject<Source>,
@@ -65,15 +62,11 @@ export class AsyncStore<
 	DefaultParams = Record<'', never>,
 > {
 	constructor(
-		// eslint-disable-next-line @typescript-eslint/naming-convention
 		private readonly API: Source,
 		private readonly method: MethodName,
 		public readonly name: string,
 		private readonly defaultParams?: DefaultParams,
-		private readonly additionalDeps: () => AdditionalDeps = () => [
-			NSApi.session,
-			NSApi.reload,
-		],
+		private readonly additionalDeps: () => AdditionalDeps = () => [],
 		public debug = false,
 		private readonly skipErrorMessages = false,
 	) {
@@ -120,7 +113,6 @@ export class AsyncStore<
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const store = this
 
-		// Reload on reload request
 		autorun(function apiStoreReload() {
 			store.update(toJS(store.params))
 		})
@@ -203,7 +195,6 @@ export class AsyncStore<
 			this.defaultParams,
 		)
 
-		// Something wrong with types
 		const request = this.API[this.method]
 		if (typeof request !== 'function') {
 			Logger.warn(
@@ -228,7 +219,6 @@ export class AsyncStore<
 		const deps = Object.values(params).concat(this.additionalDeps())
 		this.log('deps', deps)
 
-		// Some of the params arent loaded, skipping...
 		if (deps.some(e => typeof e === 'undefined' || e === null)) {
 			this.log(
 				'Undefined values in params, additional ' + this.additionalDeps(),
@@ -238,8 +228,9 @@ export class AsyncStore<
 
 		const key = String(this.method) + '-' + JSON.stringify(params)
 
-		// Only force load from cache on the first request
-		const cache: CacheUsed | undefined = firstTimeCacheUsedFor.has(key)
+		const cache: { isUsed: boolean } | undefined = firstTimeCacheUsedFor.has(
+			key,
+		)
 			? undefined
 			: { isUsed: false }
 
@@ -267,10 +258,7 @@ export class AsyncStore<
 				cache?.isUsed,
 			)
 		} catch (error) {
-			const canIgnore =
-				(error instanceof Error && error.message === 'Aborted') ||
-				(error instanceof NetSchoolError && error.loggerIgnore)
-
+			const canIgnore = error instanceof Error && error.message === 'Aborted'
 			if (!canIgnore) {
 				Logger.error(
 					'Failed to update для',
@@ -279,7 +267,7 @@ export class AsyncStore<
 				)
 			}
 
-			this.error = error
+			this.error = error as Error
 		} finally {
 			this.loading = false
 			firstTimeCacheUsedFor.add(key)

@@ -4,7 +4,6 @@ export const SETTINGS_ROUTES = {
 	main: 'Настройки ',
 	update: 'Обновления',
 	colors: 'Внешний вид',
-	marks: 'Оценки',
 	notifs: 'Уведомления',
 	advanced: 'Расширенные',
 	support: 'О приложении',

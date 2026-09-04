@@ -4,7 +4,6 @@ import * as Device from 'expo-device'
 import { autorun } from 'mobx'
 import { Toast } from '../../utils/Toast'
 import { setupLessonChannel } from './lesson'
-import { setupMarksChannel } from './marks'
 
 notifee.onBackgroundEvent(async () => {
 	// TODO React on event, e.g. open approprietary screen etc
@@ -12,7 +11,6 @@ notifee.onBackgroundEvent(async () => {
 
 autorun(function lessonNotificationSetup() {
 	setupLessonChannel()
-	setupMarksChannel()
 
 	if (XSettings.notificationsEnabled) {
 		if (Device.isDevice) {

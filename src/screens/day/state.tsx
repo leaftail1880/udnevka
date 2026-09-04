@@ -1,15 +1,11 @@
 import { XSettings } from '@/models/settings'
-import { Theme } from '@/models/theme'
-import {
-	AssignmentsStore,
-	AttachmentsStore,
-	DiaryStore,
-} from '@/services/net-school/store'
+import { ScheduleStore } from '@/services/mgik/store'
 import { Spacings } from '@/utils/Spacings'
 import { autorun, makeAutoObservable } from 'mobx'
 import { View } from 'react-native'
 import { Text } from 'react-native-paper'
 import { LANG, globalStyles } from '../../constants'
+import { Theme } from '../../models/theme'
 import { makeReloadPersistable } from '../../utils/makePersistable'
 
 const second = 1000
@@ -31,15 +27,14 @@ export const DiaryState = new (class {
 	day = new Date().toYYYYMMDD()
 	week = new Date()
 
-	showHomework = true
-	showAttachments = true
+	showHomework = false // no assignments now
+	showAttachments = false // no attachments
 	showLessonTheme = true
-
-	edit = false
 
 	get weekDays() {
 		return Date.week(this.week)
 	}
+
 	private weekOffset(daysOffset: number) {
 		return new Date(this.week.getTime() + daysOffset * day)
 	}
@@ -58,7 +53,7 @@ export const DiaryState = new (class {
 				? null
 				: {
 						label: <DayRenderer day={today} i={0} />,
-						value: todayString + '$TODAY', // Just so no same warning keys warning is thrown
+						value: todayString + '$TODAY',
 						week: todayWeek[0],
 					},
 			weekValue('Прошлая неделя', this.weekBefore),
@@ -72,30 +67,15 @@ export const DiaryState = new (class {
 })()
 
 autorun(() => {
-	const { studentId } = XSettings
-	const { showHomework, weekDays } = DiaryState
+	const { selectedGroup } = XSettings
+	if (!selectedGroup) return
 
-	DiaryStore.withParams({
-		studentId,
-		startDate: weekDays[0].toNetSchool(),
-		endDate: weekDays[6].toNetSchool(),
+	ScheduleStore.withParams({
+		idGroup: selectedGroup,
+		isDo: undefined,
 	})
 
-	AssignmentsStore.withParams({
-		studentId,
-		classmeetingsIds: showHomework
-			? DiaryStore.result?.lessons.map(e => e.classmeetingId)
-			: undefined,
-	})
-
-	const withAttachments = AssignmentsStore.result
-		?.filter(e => e.attachmentsExists)
-		.map(e => e.assignmentId)
-
-	AttachmentsStore.withParams({
-		studentId,
-		assignmentIds: withAttachments?.length ? withAttachments : undefined,
-	})
+	// ScheduleStore will fetch all schedule for the group; we can filter by week
 })
 
 function weekValue(text: string, week: Date) {

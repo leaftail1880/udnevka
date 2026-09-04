@@ -1,5 +1,4 @@
-import { XSettings } from '@/models/settings'
-import { DiaryStore } from '@/services/net-school/store'
+import { ScheduleStore } from '@/services/mgik/store'
 import { observer } from 'mobx-react-lite'
 import { StyleSheet } from 'react-native'
 import { Text } from 'react-native-paper'
@@ -9,29 +8,22 @@ import DiaryLesson from './Lesson'
 import { DiaryState } from './state'
 
 export default observer(function DiaryDay(props: XBottomTabScreenProps) {
-	if (DiaryStore.fallback) return DiaryStore.fallback
+	if (ScheduleStore.fallback) return ScheduleStore.fallback
 
-	const studentSettings = XSettings.forStudentOrThrow()
-	const dayLessons = DiaryStore.result.forDay(DiaryState.day, studentSettings)
+	const schedule = ScheduleStore.result!
+	const dayLessons = schedule.filter(
+		item => item.date.toYYYYMMDD() === DiaryState.day,
+	)
 
 	if (dayLessons.length === 0) {
 		return <Text style={styles.text}>Занятий нет, свобода!</Text>
 	}
 
 	return dayLessons.map((lesson, i) => (
-		<DiaryLesson
-			i={i}
-			key={lesson.classmeetingId.toString()}
-			lesson={lesson}
-			{...props}
-		/>
+		<DiaryLesson i={i} key={lesson.id.toString()} lesson={lesson} {...props} />
 	))
 })
 
 const styles = StyleSheet.create({
 	text: { textAlign: 'center', margin: Spacings.s4 },
-	reordableList: {
-		paddingHorizontal: Spacings.s1,
-	},
-	padding: { padding: Spacings.s2 },
 })

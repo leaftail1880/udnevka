@@ -3,31 +3,24 @@ import SelectModal from '@/components/SelectModal'
 import UpdateDate from '@/components/UpdateDate'
 import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { Lesson } from '@/services/net-school/lesson'
-import { DiaryStore } from '@/services/net-school/store'
+import { ScheduleStore } from '@/services/mgik/store'
 import { runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
-import { useCallback } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { CalendarProvider, ExpandableCalendar } from 'react-native-calendars'
 import { Positions } from 'react-native-calendars/src/expandableCalendar'
 import { ScrollView } from 'react-native-gesture-handler'
-import { Chip } from 'react-native-paper'
 import { XBottomTabScreenProps } from '../../../App'
 import { Spacings } from '../../utils/Spacings'
 import Day from './Day'
 import { DiaryState } from './state'
 
-// @ts-expect-error fix for defaultProps warning: https://github.com/wix/react-native-calendars/issues/2455
+// @ts-expect-error fix for defaultProps warning
 ExpandableCalendar.defaultProps = undefined
 
-import { Chips } from '@/components/Chips'
 import { LocaleConfig } from 'react-native-calendars'
-import { EditDiaryDayScreen } from './edit/Screen'
-import { EditDiaryFAB } from './edit/Select'
 
 // localization for react-native-calendars
-// https://github.com/arshaw/xdate/blob/3060bceb5f0901f48df9ae657b6349b2733fec37/src/xdate.js#L475
 LocaleConfig.locales['ru-RU'] = {
 	monthNames: [
 		'Январь',
@@ -74,29 +67,19 @@ LocaleConfig.defaultLocale = 'ru-RU'
 export default observer(function DiaryScreen(props: XBottomTabScreenProps) {
 	return (
 		<View style={styles.flex}>
-			<Header title="Дневник"></Header>
-			<EditDiaryFAB />
-			{!DiaryState.edit ? (
-				<ScrollView
-					contentContainerStyle={styles.scrollContentContainer}
-					refreshControl={DiaryStore.refreshControl}
-				>
-					<View style={styles.selectDayView}>
-						<SelectDay />
-					</View>
-					<Chips style={styles.chips}>
-						<Filter type="showHomework" label="Оценки" />
-						<Filter type="showAttachments" label="Файлы" />
-						<Filter type="showLessonTheme" label="Темы" />
-					</Chips>
-					<View style={styles.day}>
-						{DiaryStore.fallback || <Day {...props} />}
-					</View>
-					<UpdateDate store={DiaryStore} />
-				</ScrollView>
-			) : (
-				DiaryStore.fallback || <EditDiaryDayScreen />
-			)}
+			<Header title="Расписание" />
+			<ScrollView
+				contentContainerStyle={styles.scrollContentContainer}
+				refreshControl={ScheduleStore.refreshControl}
+			>
+				<View style={styles.selectDayView}>
+					<SelectDay />
+				</View>
+				<View style={styles.day}>
+					{ScheduleStore.fallback || <Day {...props} />}
+				</View>
+				<UpdateDate store={ScheduleStore} />
+			</ScrollView>
 		</View>
 	)
 })
@@ -108,7 +91,6 @@ const styles = StyleSheet.create({
 		alignContent: 'center',
 	},
 	selectDayView: { flex: 1, zIndex: 30 },
-	chips: { paddingBottom: 0 },
 	day: { padding: Spacings.s1 },
 })
 
@@ -127,20 +109,15 @@ const SelectDay = observer(function SelectDay() {
 		} = {
 			backgroundColor: Theme.colors.navigationBar,
 			calendarBackground: Theme.colors.navigationBar,
-
 			textSectionTitleColor: Theme.colors.primary,
 			monthTextColor: Theme.colors.primary,
 			arrowColor: Theme.colors.primary,
-
 			selectedDayBackgroundColor: Theme.colors.secondaryContainer,
 			selectedDayTextColor: Theme.colors.onSecondaryContainer,
-
 			todayBackgroundColor: Theme.colors.surfaceDisabled,
 			todayTextColor: Theme.colors.onSurfaceDisabled,
-
 			textDisabledColor: Theme.colors.onSurfaceDisabled,
 			dayTextColor: Theme.colors.onBackground,
-
 			expandableKnobColor: Theme.colors.secondaryContainer,
 		}
 		return (
@@ -151,7 +128,6 @@ const SelectDay = observer(function SelectDay() {
 						d = fromCalendar(d)
 						runInAction(() => {
 							DiaryState.day = d
-
 							const [day, month, year] = d.split('.').map(e => parseInt(e))
 							const weekDate = new Date(`${year}-${month}-${day}T00:00:00.000Z`)
 							DiaryState.week = weekDate
@@ -169,7 +145,7 @@ const SelectDay = observer(function SelectDay() {
 					initialPosition={Positions.CLOSED}
 					allowShadow
 					closeOnDayPress={false}
-				></ExpandableCalendar>
+				/>
 			</CalendarProvider>
 		)
 	}
@@ -190,28 +166,7 @@ const SelectDay = observer(function SelectDay() {
 	)
 })
 
-type FilterProps = {
-	type: keyof FilterObject<typeof DiaryState, boolean>
-	label: string
-}
-
-const Filter = observer(function Filter(props: FilterProps) {
-	const onPress = useCallback(
-		() =>
-			runInAction(() => {
-				DiaryState[props.type] = !DiaryState[props.type]
-			}),
-		[props.type],
-	)
-
-	return (
-		<Chip mode="flat" selected={DiaryState[props.type]} onPress={onPress}>
-			{props.label}
-		</Chip>
-	)
-})
-
 export type DiaryLessonProps = {
 	i: number
-	lesson: Lesson
+	lesson: import('@/services/mgik/api').ScheduleItem
 }

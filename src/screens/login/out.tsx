@@ -1,6 +1,6 @@
 import Header from '@/components/Header'
+import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { API } from '@/services/net-school/api'
 import { ModalAlert } from '@/utils/Toast'
 import { useStyles } from '@/utils/useStyles'
 import { runInAction } from 'mobx'
@@ -11,25 +11,30 @@ import { Spacings } from '../../utils/Spacings'
 
 function logOut() {
 	ModalAlert.close()
-	runInAction(() => API.logOut())
+	runInAction(() => {
+		XSettings.save({
+			selectedClientType: undefined,
+			selectedFormOfEducation: undefined,
+			selectedCourse: undefined,
+			selectedFaculty: undefined,
+			selectedGroup: undefined,
+		})
+	})
 }
 
 function ensureLogin() {
 	ModalAlert.show(
 		'Вы уверены?',
-		<Text>
-			Если вы выйдете, то ваши логин и пароль будут удалены, и вы не сможете
-			входить автоматически. Также, вы не сможете получать уведомления.
-		</Text>,
+		<Text>Вы сбросите выбранную группу и сможете выбрать другую.</Text>,
 		true,
-		[{ label: 'Выйти', callback: logOut }],
+		[{ label: 'Сбросить', callback: logOut }],
 	)
 }
 
 export const LogoutButton = observer(function LogoutButton() {
 	return (
 		<Button onPress={ensureLogin} {...Theme.destructiveButton}>
-			Выйти
+			Сбросить группу
 		</Button>
 	)
 })
@@ -42,7 +47,7 @@ export default observer(function LogoutScreen() {
 
 	return (
 		<View style={viewStyle}>
-			<Header title="Выход"></Header>
+			<Header title="Сброс группы"></Header>
 			<View style={styles.container}>
 				<LogoutButton />
 			</View>
@@ -51,6 +56,5 @@ export default observer(function LogoutScreen() {
 })
 
 const styles = StyleSheet.create({
-	subtitle: { alignSelf: 'center', marginTop: Spacings.s2 },
 	container: { alignContent: 'center', padding: Spacings.s3 },
 })
