@@ -8,7 +8,7 @@ import {
 import notifee, {
 	AndroidImportance,
 	AndroidVisibility,
-} from '@notifee/react-native'
+} from 'react-native-notify-kit'
 import { autorun, makeAutoObservable, runInAction } from 'mobx'
 
 let foregroundServiceRegistered = false

@@ -65,6 +65,7 @@ const Config = {
 			'expo-background-task',
 			'expo-sharing',
 			'expo-status-bar',
+			'react-native-notify-kit',
 			// 'expo-build-properties',
 			['@sentry/react-native', sentry],
 			[

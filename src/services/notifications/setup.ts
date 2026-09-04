@@ -1,7 +1,7 @@
 import { XSettings } from '@/models/settings'
-import notifee, { AuthorizationStatus } from '@notifee/react-native'
 import * as Device from 'expo-device'
 import { autorun } from 'mobx'
+import notifee, { AuthorizationStatus } from 'react-native-notify-kit'
 import { Toast } from '../../utils/Toast'
 import { setupLessonChannel } from './lesson'
 
