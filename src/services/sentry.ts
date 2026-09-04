@@ -24,7 +24,7 @@ Sentry.setContext('expo', {
 
 if (!__TEST__) {
 	Sentry.init({
-		dsn: 'https://9f602cf540f26a8de9d5d708df4558b3@o4506601427369984.ingest.sentry.io/4506601430122496',
+		dsn: 'https://ec7f0fa19887b131980e9bc93b8af185@o4506601427369984.ingest.us.sentry.io/4512028382658561',
 		// Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
 		tracesSampleRate: 0.9,
 		profilesSampleRate: 0.9,
