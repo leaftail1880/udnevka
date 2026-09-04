@@ -1,13 +1,13 @@
-import shape1 from "../../assets/images/footer/shape-1.svg";
-import shape2 from "../../assets/images/footer/shape-2.svg";
-import shape3 from "../../assets/images/footer/shape-3.svg";
-import logo from "../../assets/images/logo-outline.svg";
+import shape1 from '../../assets/images/footer/shape-1.svg'
+import shape2 from '../../assets/images/footer/shape-2.svg'
+import shape3 from '../../assets/images/footer/shape-3.svg'
+import logo from '../../assets/images/logo-outline.svg'
 import {
 	githubDownloadLatestApk,
 	githubReleases,
 	githubRepo,
 	githubUser,
-} from "../constants";
+} from '../constants'
 
 function Footer() {
 	return (
@@ -34,13 +34,13 @@ function Footer() {
 								</p>
 
 								<div className="ud-widget-socials">
-									<a href="https://t.me/xdnevnikoffical">
+									<a href="https://t.me/udnevkaoffical">
 										<i className="lni lni-telegram-original"></i>
 										<p className="ud-widget-desc">Новости</p>
 									</a>
 								</div>
 								<div className="ud-widget-socials">
-									<a href="https://t.me/xdnevniksupport">
+									<a href="https://t.me/udnevkasupport">
 										<i className="lni lni-telegram-original"></i>
 										<p className="ud-widget-desc">Тех поддержка</p>
 									</a>
@@ -222,10 +222,10 @@ function Footer() {
 						</div> */}
 						<div className="col-md-4">
 							<p className="ud-footer-bottom-right">
-								© Copyright{" "}
+								© Copyright{' '}
 								<a href={githubUser} rel="nofollow">
 									Leaftail1880
-								</a>{" "}
+								</a>{' '}
 								{new Date().getFullYear().toString()}
 							</p>
 						</div>
@@ -233,7 +233,7 @@ function Footer() {
 				</div>
 			</div>
 		</footer>
-	);
+	)
 }
 
-export default Footer;
+export default Footer

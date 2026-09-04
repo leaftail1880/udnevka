@@ -1,28 +1,27 @@
-
 <div align="center">
-  <a href="https://leaftail1880.github.io/xdnevnik">
+  <a href="https://leaftail1880.github.io/udnevka">
   <img src="docs/assets/images/logo.svg" alt="logo" height="90" align="center">
   </a>
-  <h1 align="center">XDnevnik</h1>
+  <h1 align="center">Udnevka</h1>
   <h3 align="center">Alternative NetSchool Diary Mobile App</h3>
-  <a href="https://github.com/leaftail1880/xdnevnik/releases">
-    <img src="https://img.shields.io/github/downloads/leaftail1880/xdnevnik/total"/>
-    <img src="https://img.shields.io/github/commits-since/leaftail1880/xdnevnik/latest"/>
-    <img src="https://img.shields.io/github/actions/workflow/status/leaftail1880/xdnevnik/update.yml"/>
+  <a href="https://github.com/leaftail1880/udnevka/releases">
+    <img src="https://img.shields.io/github/downloads/leaftail1880/udnevka/total"/>
+    <img src="https://img.shields.io/github/commits-since/leaftail1880/udnevka/latest"/>
+    <img src="https://img.shields.io/github/actions/workflow/status/leaftail1880/udnevka/update.yml"/>
   </a>
-  <a href="https://codeclimate.com/github/leaftail1880/xdnevnik/maintainability"><img src="https://api.codeclimate.com/v1/badges/c6caa96200ca2926a6bd/maintainability" /></a>
-  <a href="https://codeclimate.com/github/leaftail1880/xdnevnik/test_coverage"><img src="https://api.codeclimate.com/v1/badges/c6caa96200ca2926a6bd/test_coverage" /></a>
-  <a href="https://telegram.me/xdnevnikoffical">
+  <a href="https://codeclimate.com/github/leaftail1880/udnevka/maintainability"><img src="https://api.codeclimate.com/v1/badges/c6caa96200ca2926a6bd/maintainability" /></a>
+  <a href="https://codeclimate.com/github/leaftail1880/udnevka/test_coverage"><img src="https://api.codeclimate.com/v1/badges/c6caa96200ca2926a6bd/test_coverage" /></a>
+  <a href="https://telegram.me/udnevkaoffical">
 	  <img src="https://img.shields.io/badge/News%20Channel-grey?logo=telegram" alt="News Channel" />
   </a>
-  <a href="https://telegram.me/xdnevniksupport">
+  <a href="https://telegram.me/udnevkasupport">
 	  <img src="https://img.shields.io/badge/Support%20Chat-grey?logo=telegram" alt="Support Chat" />
   </a>
 </div>
 
 ### What is it?
 
-Alternative client for the diary service, you can [learn more here](https://leaftail1880.github.io/xdnevnik)
+Alternative client for the diary service, you can [learn more here](https://leaftail1880.github.io/udnevka)
 
 ### Changelog
 
@@ -33,16 +32,18 @@ You can read the changelog on the [releases page](/releases)
 Contributing is hightly welcome.
 No Android Studio or XCode required!
 
-To contribute, download & install [Dev Client](https://github.com/leaftail1880/xdnevnik/releases/latest/download/XDnevnik.Dev.Client.apk) on your Android device
+To contribute, download & install [Dev Client](https://github.com/leaftail1880/udnevka/releases/latest/download/Udnevka.Dev.Client.apk) on your Android device
 
 Fork repo, clone it and cd into it
 
 Install using yarn:
+
 ```bash
 yarn install
 ```
 
 Start the development server:
+
 ```bash
 yarn start
 ```
@@ -72,6 +73,7 @@ MIT License
 Copyright (c) 2024 Leaftail1880
 
 [Docs](./docs) directory:
+
 - Copyright (c) 2024 Leaftail1880
 - Copyright (c) 2023 Riri
 

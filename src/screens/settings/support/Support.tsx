@@ -27,7 +27,7 @@ export default function About(props: StackScreenProps<SettingsRoutes>) {
 
 			<List.Item
 				onPress={() => {
-					Linking.openURL('https://leaftail1880.github.io/xdnevnik')
+					Linking.openURL('https://leaftail1880.github.io/udnevka')
 				}}
 				title="Официальный сайт"
 				left={props => <List.Icon {...props} icon="web" />}
@@ -36,7 +36,7 @@ export default function About(props: StackScreenProps<SettingsRoutes>) {
 
 			<List.Item
 				onPress={() => {
-					Linking.openURL('https://t.me/xdnevnikoffical')
+					Linking.openURL('https://t.me/udnevkaoffical')
 				}}
 				title="Новости приложения"
 				left={props => <List.Icon {...props} icon="send" />}
@@ -45,7 +45,7 @@ export default function About(props: StackScreenProps<SettingsRoutes>) {
 
 			<List.Item
 				onPress={() => {
-					Linking.openURL('https://t.me/xdnevniksupport')
+					Linking.openURL('https://t.me/udnevkasupport')
 				}}
 				title="Тех. поддержка"
 				left={props => <List.Icon {...props} icon="send" />}
@@ -53,7 +53,7 @@ export default function About(props: StackScreenProps<SettingsRoutes>) {
 			<Divider />
 			<List.Item
 				onPress={() => {
-					Linking.openURL('https://github.com/leaftail1880/xdnevnik')
+					Linking.openURL('https://github.com/leaftail1880/udnevka')
 				}}
 				left={props => <List.Icon {...props} icon="github" />}
 				title="Исходный код на GitHub"

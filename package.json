@@ -1,5 +1,5 @@
 {
-	"name": "xdnevnik",
+	"name": "udnevka",
 	"version": "1.0.0",
 	"private": true,
 	"main": "node_modules/expo/AppEntry.js",
@@ -104,7 +104,7 @@
 		"prettier": "^3.6.2",
 		"prettier-2": "npm:prettier@^2",
 		"react-dom": "19.1.0",
-		"swc-flow-jest": "portal:swc-flow-jest::locator=xdnevnik%40workspace%3A.",
+		"swc-flow-jest": "portal:swc-flow-jest::locator=udnevka%40workspace%3A.",
 		"typescript": "~5.9.3",
 		"typescript-eslint": "^8.46.3"
 	},

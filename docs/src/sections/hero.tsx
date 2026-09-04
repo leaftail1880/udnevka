@@ -1,6 +1,6 @@
-import dottedShape from "../../assets/images/hero/dotted-shape.svg";
-import hero from "../../assets/images/hero/hero-image.png";
-import { githubDownloadLatestApk } from "../constants";
+import dottedShape from '../../assets/images/hero/dotted-shape.svg'
+import hero from '../../assets/images/hero/hero-image.png'
+import { githubDownloadLatestApk } from '../constants'
 
 function Hero() {
 	return (
@@ -14,7 +14,7 @@ function Hero() {
 							data-aos-duration="1000"
 						>
 							<h1 className="ud-hero-title">
-								XDnevnik - Лучшее мобильное приложение Сетевого Города
+								Udnevka - Лучшее мобильное приложение Сетевого Города
 							</h1>
 							<p className="ud-hero-desc">
 								Доступное, легкое и удобное мобильное приложение для доступа в
@@ -51,7 +51,7 @@ function Hero() {
 				</div>
 			</div>
 		</section>
-	);
+	)
 }
 
-export default Hero;
+export default Hero

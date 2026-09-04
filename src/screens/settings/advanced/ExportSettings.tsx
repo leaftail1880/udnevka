@@ -10,7 +10,7 @@ import { List, Text } from 'react-native-paper'
 
 const currentFormatVersion = 1
 
-interface ExportedXDnevnikSettingsFormat {
+interface ExportedUdnevkaSettingsFormat {
 	formatVersion: typeof currentFormatVersion // future proof
 	appVersion: string // 0.18.0
 	storages: {
@@ -38,7 +38,7 @@ export const ExportImportSettings = observer(function ExportImportSettings() {
 							),
 						)
 
-						const exportedStorage: ExportedXDnevnikSettingsFormat = {
+						const exportedStorage: ExportedUdnevkaSettingsFormat = {
 							formatVersion: currentFormatVersion,
 							appVersion: nativeApplicationVersion ?? '0.0.0',
 							storages: storages
@@ -102,7 +102,7 @@ export const ExportImportSettings = observer(function ExportImportSettings() {
 								`Ожидался файл версии ${currentFormatVersion}, получен ${json.formatVersion}`,
 							)
 
-						const validExport = json as ExportedXDnevnikSettingsFormat
+						const validExport = json as ExportedUdnevkaSettingsFormat
 
 						if (
 							!('appVersion' in validExport) ||

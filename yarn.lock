@@ -13887,9 +13887,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"swc-flow-jest@portal:swc-flow-jest::locator=xdnevnik%40workspace%3A.":
+"swc-flow-jest@portal:swc-flow-jest::locator=udnevka%40workspace%3A.":
   version: 0.0.0-use.local
-  resolution: "swc-flow-jest@portal:swc-flow-jest::locator=xdnevnik%40workspace%3A."
+  resolution: "swc-flow-jest@portal:swc-flow-jest::locator=udnevka%40workspace%3A."
   languageName: node
   linkType: soft
 
@@ -15046,9 +15046,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"xdnevnik-landing@workspace:docs":
+"udnevka-landing@workspace:docs":
   version: 0.0.0-use.local
-  resolution: "xdnevnik-landing@workspace:docs"
+  resolution: "udnevka-landing@workspace:docs"
   dependencies:
     "@childrentime/devcert": "npm:^1.2.8"
     "@types/aos": "npm:^3.0.7"
@@ -15068,9 +15068,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"xdnevnik@workspace:.":
+"udnevka@workspace:.":
   version: 0.0.0-use.local
-  resolution: "xdnevnik@workspace:."
+  resolution: "udnevka@workspace:."
   dependencies:
     "@babel/core": "npm:^7.28.5"
     "@boterop/react-native-background-timer": "npm:^2.6.0"
@@ -15144,7 +15144,7 @@ __metadata:
     react-native-worklets: "npm:0.10.1"
     react-test-renderer: "npm:19.1.0"
     reanimated-color-picker: "npm:^4.1.1"
-    swc-flow-jest: "portal:swc-flow-jest::locator=xdnevnik%40workspace%3A."
+    swc-flow-jest: "portal:swc-flow-jest::locator=udnevka%40workspace%3A."
     typescript: "npm:~5.9.3"
     typescript-eslint: "npm:^8.46.3"
   dependenciesMeta:

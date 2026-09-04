@@ -6,7 +6,7 @@ function Features() {
 					<div className="col-lg-12">
 						<div className="ud-section-title">
 							<span>Преимущества</span>
-							<h3>Почему XDnevnik?</h3>
+							<h3>Почему Udnevka?</h3>
 							<p>Этого нет в официальном приложении.</p>
 						</div>
 					</div>

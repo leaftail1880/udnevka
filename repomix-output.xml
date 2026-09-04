@@ -946,7 +946,7 @@ export default memo(function PrivacyPolicy() {
 				{/* eslint-disable-next-line react-native/no-raw-text */}
 				<Strong>Privacy Policy</Strong>
 				<Text>
-					Leaftail1880 built the XDnevnik app as an Open Source app. This
+					Leaftail1880 built the Udnevka app as an Open Source app. This
 					SERVICE is provided by Leaftail1880 at no cost and is intended for use
 					as is.
 				</Text>
@@ -964,7 +964,7 @@ export default memo(function PrivacyPolicy() {
 				</Text>
 				<Text>
 					The terms used in this Privacy Policy have the same meanings as in our
-					Terms and Conditions, which are accessible at XDnevnik unless
+					Terms and Conditions, which are accessible at Udnevka unless
 					otherwise defined in this Privacy Policy.
 				</Text>
 				{/* eslint-disable-next-line react-native/no-raw-text */}
@@ -1147,7 +1147,7 @@ export default function About(props: StackScreenProps<SettingsRoutes>) {
 
 			<List.Item
 				onPress={() => {
-					Linking.openURL('https://leaftail1880.github.io/xdnevnik')
+					Linking.openURL('https://leaftail1880.github.io/udnevka')
 				}}
 				title="Официальный сайт"
 				left={props => <List.Icon {...props} icon="web" />}
@@ -1156,7 +1156,7 @@ export default function About(props: StackScreenProps<SettingsRoutes>) {
 
 			<List.Item
 				onPress={() => {
-					Linking.openURL('https://t.me/xdnevnikoffical')
+					Linking.openURL('https://t.me/udnevkaoffical')
 				}}
 				title="Новости приложения"
 				left={props => <List.Icon {...props} icon="send" />}
@@ -1165,7 +1165,7 @@ export default function About(props: StackScreenProps<SettingsRoutes>) {
 
 			<List.Item
 				onPress={() => {
-					Linking.openURL('https://t.me/xdnevniksupport')
+					Linking.openURL('https://t.me/udnevkasupport')
 				}}
 				title="Тех. поддержка"
 				left={props => <List.Icon {...props} icon="send" />}
@@ -1173,7 +1173,7 @@ export default function About(props: StackScreenProps<SettingsRoutes>) {
 			<Divider />
 			<List.Item
 				onPress={() => {
-					Linking.openURL('https://github.com/leaftail1880/xdnevnik')
+					Linking.openURL('https://github.com/leaftail1880/udnevka')
 				}}
 				left={props => <List.Icon {...props} icon="github" />}
 				title="Исходный код на GitHub"
@@ -1232,14 +1232,14 @@ export default memo(function TermsAndConditions() {
 					without making it very clear to you exactly what you’re paying for.
 				</Text>
 				<Text>
-					The XDnevnik app stores and processes personal data that you have
+					The Udnevka app stores and processes personal data that you have
 					provided to us, to provide my Service. It’s your responsibility to
 					keep your phone and access to the app secure. We therefore recommend
 					that you do not jailbreak or root your phone, which is the process of
 					removing software restrictions and limitations imposed by the official
 					operating system of your device. It could make your phone vulnerable
 					to malware/viruses/malicious programs, compromise your phone’s
-					security features and it could mean that the XDnevnik app won’t work
+					security features and it could mean that the Udnevka app won’t work
 					properly or at all.
 				</Text>
 				<View>
@@ -3057,7 +3057,7 @@ import { List, Text } from 'react-native-paper'
 
 const currentFormatVersion = 1
 
-interface ExportedXDnevnikSettingsFormat {
+interface ExportedUdnevkaSettingsFormat {
 	formatVersion: typeof currentFormatVersion // future proof
 	appVersion: string // 0.18.0
 	storages: {
@@ -3085,7 +3085,7 @@ export const ExportImportSettings = observer(function ExportImportSettings() {
 							),
 						)
 
-						const exportedStorage: ExportedXDnevnikSettingsFormat = {
+						const exportedStorage: ExportedUdnevkaSettingsFormat = {
 							formatVersion: currentFormatVersion,
 							appVersion: nativeApplicationVersion ?? '0.0.0',
 							storages: storages
@@ -3149,7 +3149,7 @@ export const ExportImportSettings = observer(function ExportImportSettings() {
 								`Ожидался файл версии ${currentFormatVersion}, получен ${json.formatVersion}`,
 							)
 
-						const validExport = json as ExportedXDnevnikSettingsFormat
+						const validExport = json as ExportedUdnevkaSettingsFormat
 
 						if (
 							!('appVersion' in validExport) ||
@@ -3342,8 +3342,8 @@ import { ModalAlert } from '../../../utils/Toast'
 import State from './state'
 
 export const Filename = Platform.select({
-	ios: 'XDnevnik.ipa',
-	android: __DEV__ ? 'XDnevnik.Dev.Client.apk' : 'XDnevnik.apk',
+	ios: 'Udnevka.ipa',
+	android: __DEV__ ? 'Udnevka.Dev.Client.apk' : 'Udnevka.apk',
 })
 
 async function handleErrorsAndDisplayInModal(task: () => Promise<void>) {
@@ -3449,7 +3449,7 @@ function openInstaller(fileUrl: string) {
 			// } else
 			// 	ModalAlert.alert(
 			// 		'Дайте разрешение',
-			// 		'XDnevnik всего-лишь скачает один файл в папку Downloads и откроет для Вас проводник чтобы Вы могли обновить XDnevnik и получить новейшие возможности.'
+			// 		'Udnevka всего-лишь скачает один файл в папку Downloads и откроет для Вас проводник чтобы Вы могли обновить Udnevka и получить новейшие возможности.'
 			// 	)
 		}
 		Logger.info('App installer opened successfully')

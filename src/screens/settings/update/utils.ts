@@ -10,8 +10,8 @@ import { ModalAlert } from '../../../utils/Toast'
 import State from './state'
 
 export const Filename = Platform.select({
-	ios: 'XDnevnik.ipa',
-	android: __DEV__ ? 'XDnevnik.Dev.Client.apk' : 'XDnevnik.apk',
+	ios: 'Udnevka.ipa',
+	android: __DEV__ ? 'Udnevka.Dev.Client.apk' : 'Udnevka.apk',
 })
 
 async function handleErrorsAndDisplayInModal(task: () => Promise<void>) {
@@ -117,7 +117,7 @@ function openInstaller(fileUrl: string) {
 			// } else
 			// 	ModalAlert.alert(
 			// 		'Дайте разрешение',
-			// 		'XDnevnik всего-лишь скачает один файл в папку Downloads и откроет для Вас проводник чтобы Вы могли обновить XDnevnik и получить новейшие возможности.'
+			// 		'Udnevka всего-лишь скачает один файл в папку Downloads и откроет для Вас проводник чтобы Вы могли обновить Udnevka и получить новейшие возможности.'
 			// 	)
 		}
 		Logger.info('App installer opened successfully')

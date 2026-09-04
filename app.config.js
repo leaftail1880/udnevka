@@ -7,21 +7,19 @@ import {
 } from 'expo/config-plugins'
 
 const version = '0.26.7'
-const slug = 'xdnevnik'
-const name = 'XDnevnik'
+const slug = 'udnevka'
+const name = 'Udnevka'
 const projectId = '97163afe-5c7e-4856-ba8f-348e00aa7c04'
 
 // @ts-expect-error
 // eslint-disable-next-line no-undef
 const IS_DEV = !!process.env.DEV
 
-const id = IS_DEV
-	? 'com.leaftail1880.xdnevnik.dev'
-	: 'com.leaftail1880.xdnevnik'
+const id = IS_DEV ? 'com.leaftail1880.udnevka.dev' : 'com.leaftail1880.udnevka'
 
 const sentry = {
 	organization: 'leaftail1880',
-	project: 'xdnevnik',
+	project: 'udnevka',
 }
 
 const splashBackgroundDark = '#252525'

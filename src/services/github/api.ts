@@ -51,7 +51,7 @@ class GithubApi {
 
 	async getReleases() {
 		return await this.fetch<GithubRelease[]>(
-			'https://api.github.com/repos/leaftail1880/xdnevnik/releases',
+			'https://api.github.com/repos/leaftail1880/udnevka/releases',
 		)
 	}
 }

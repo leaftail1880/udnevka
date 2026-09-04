@@ -37,9 +37,8 @@ export default memo(function PrivacyPolicy() {
 				{/* eslint-disable-next-line react-native/no-raw-text */}
 				<Strong>Privacy Policy</Strong>
 				<Text>
-					Leaftail1880 built the XDnevnik app as an Open Source app. This
-					SERVICE is provided by Leaftail1880 at no cost and is intended for use
-					as is.
+					Leaftail1880 built the Udnevka app as an Open Source app. This SERVICE
+					is provided by Leaftail1880 at no cost and is intended for use as is.
 				</Text>
 				<Text>
 					This page is used to inform visitors regarding my policies with the
@@ -55,8 +54,8 @@ export default memo(function PrivacyPolicy() {
 				</Text>
 				<Text>
 					The terms used in this Privacy Policy have the same meanings as in our
-					Terms and Conditions, which are accessible at XDnevnik unless
-					otherwise defined in this Privacy Policy.
+					Terms and Conditions, which are accessible at Udnevka unless otherwise
+					defined in this Privacy Policy.
 				</Text>
 				{/* eslint-disable-next-line react-native/no-raw-text */}
 				<Strong>Information Collection and Use</Strong>

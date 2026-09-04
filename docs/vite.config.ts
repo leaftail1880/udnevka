@@ -5,7 +5,7 @@ import { UserConfig } from 'vite'
 import { createHtmlPlugin } from 'vite-plugin-html'
 import {} from 'vite-react-ssg'
 
-const base = '/xdnevnik/'
+const base = '/udnevka/'
 
 // https://vitejs.dev/config/
 export default {
