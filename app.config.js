@@ -6,7 +6,7 @@ import {
 	withGradleProperties,
 } from 'expo/config-plugins'
 
-const version = '0.27.0'
+const version = '0.28.0'
 const slug = 'udnevka'
 const name = 'Udnevka'
 const projectId = '50974a14-e146-4aac-8aa5-265811d17456'
