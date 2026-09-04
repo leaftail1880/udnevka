@@ -7,6 +7,7 @@ import { observer } from 'mobx-react-lite'
 import { useMemo, useState } from 'react'
 import { FlatList, View } from 'react-native'
 import { Button, List, TextInput } from 'react-native-paper'
+import { Theme } from '../../models/theme'
 import { Spacings } from '../../utils/Spacings'
 
 type LoginMode = 'initial' | 'add'
@@ -31,6 +32,7 @@ const LoginContent = observer(function LoginContent({
 }) {
 	const navigation = useNavigation()
 	const data = DropdownDataStore.result!
+	const selectedGroups = XSettings.selectedGroupIds
 	const [selectedGroupId, setSelectedGroupId] = useState<number | undefined>(
 		undefined,
 	)
@@ -87,10 +89,21 @@ const LoginContent = observer(function LoginContent({
 					<List.Item
 						title={item.name}
 						onPress={() => setSelectedGroupId(item.id)}
+						titleStyle={
+							item.id === selectedGroupId ? { color: Theme.colors.primary } : {}
+						}
 						left={props => (
 							<List.Icon
 								{...props}
-								icon={item.id === selectedGroupId ? 'check' : 'blank'}
+								icon={
+									item.id === selectedGroupId ||
+									selectedGroups.includes(item.id)
+										? 'check'
+										: 'blank'
+								}
+								color={
+									item.id === selectedGroupId ? Theme.colors.primary : undefined
+								}
 							/>
 						)}
 					/>

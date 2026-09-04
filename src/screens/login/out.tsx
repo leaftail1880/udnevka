@@ -30,7 +30,12 @@ function ensureLogin() {
 
 export const LogoutButton = observer(function LogoutButton() {
 	return (
-		<Button onPress={ensureLogin} {...Theme.destructiveButton}>
+		<Button
+			mode="outlined"
+			onPress={ensureLogin}
+			{...Theme.destructiveButton}
+			style={[{ marginHorizontal: Spacings.s2, marginVertical: Spacings.s1 }]}
+		>
 			Сбросить группы
 		</Button>
 	)

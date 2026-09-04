@@ -15,7 +15,6 @@ import {
 	createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs'
 import {
-	CommonActions,
 	DefaultTheme,
 	NavigationContainer,
 	NavigationContainerRef,
@@ -24,13 +23,8 @@ import * as Sentry from '@sentry/react-native'
 import { toJS } from 'mobx'
 import { observer } from 'mobx-react-lite'
 import { useRef } from 'react'
-import { Easing, useWindowDimensions, View } from 'react-native'
-import {
-	BottomNavigation,
-	Icon,
-	PaperProvider,
-	TouchableRipple,
-} from 'react-native-paper'
+import { Easing, Pressable, useWindowDimensions, View } from 'react-native'
+import { Icon, PaperProvider } from 'react-native-paper'
 import {
 	SafeAreaProvider,
 	useSafeAreaInsets,
@@ -103,51 +97,99 @@ const AppRoutes = [
 const Tab = createBottomTabNavigator<BottomTabsParams>()
 
 // Custom Tab Bar Component using BottomNavigation.Bar
+import { StyleSheet } from 'react-native' // Ensure these are imported
+// Note: You can still use TouchableRipple if you prefer, but ensure style={{flex:1, justifyContent:'center'}}
+
 const CustomTabBar = observer(function CustomTabBar({
 	navigation,
 	state,
 	insets,
 }: BottomTabBarProps) {
 	return (
-		<BottomNavigation.Bar
-			navigationState={state}
-			// safeAreaInsets={insets}
-			onTabPress={({ route, preventDefault }) => {
-				const event = navigation.emit({
-					type: 'tabPress',
-					target: route.key,
-					canPreventDefault: true,
-				})
+		<View
+			style={{
+				flexDirection: 'row',
+				backgroundColor: Theme.colors.navigationBar,
+				height: 80 + (insets.bottom ?? 0),
+				paddingBottom: insets.bottom ?? 0,
+			}}
+		>
+			{state.routes.map((route, index) => {
+				const isFocused = state.index === index
+				const iconName = ScreenIcons[route.name as keyof typeof ScreenIcons]
 
-				if (event.defaultPrevented) {
-					preventDefault()
-				} else {
-					navigation.dispatch({
-						...CommonActions.navigate(route.name, route.params),
-						target: state.key,
+				const color = isFocused
+					? Theme.colors.onPrimaryContainer
+					: Theme.colors.onSurfaceVariant
+
+				const onPress = () => {
+					const event = navigation.emit({
+						type: 'tabPress',
+						target: route.key,
+						canPreventDefault: true,
+					})
+
+					if (!isFocused && !event.defaultPrevented) {
+						navigation.navigate(route.name, route.params)
+					}
+				}
+
+				const onLongPress = () => {
+					navigation.emit({
+						type: 'tabLongPress',
+						target: route.key,
 					})
 				}
-			}}
-			renderIcon={({ route, color }) => {
-				const iconName = ScreenIcons[route.name as keyof typeof ScreenIcons]
+
 				return (
-					<View style={{ paddingBottom: 10 }}>
-						<Icon source={iconName} color={color} size={23} />
-					</View>
+					<Pressable
+						key={route.key}
+						onPress={onPress}
+						onLongPress={onLongPress}
+						style={styles.tabItem} // Defined below
+					>
+						<>
+							{isFocused && (
+								<View
+									style={[
+										styles.activeIndicator,
+										{ backgroundColor: Theme.colors.secondaryContainer },
+									]}
+								/>
+							)}
+							<Icon source={iconName} color={color} size={24} />
+							<View style={{ height: 12 }} />
+							<Text
+								style={{
+									color,
+									fontSize: 12,
+									fontWeight: 'bold',
+								}}
+							>
+								{route.name}
+							</Text>
+						</>
+					</Pressable>
 				)
-			}}
-			shifting={false}
-			labeled={true}
-			getLabelText={({ route }) => route.name}
-			activeColor={Theme.colors.onPrimaryContainer}
-			activeIndicatorStyle={{ top: 30 }}
-			inactiveColor={Theme.colors.onSurfaceVariant}
-			style={{
-				backgroundColor: Theme.colors.navigationBar,
-			}}
-			renderTouchable={props => <TouchableRipple {...props} key={props.key} />}
-		/>
+			})}
+		</View>
 	)
+})
+
+// Add these styles outside the component
+const styles = StyleSheet.create({
+	tabItem: {
+		flex: 1,
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	activeIndicator: {
+		position: 'absolute',
+		top: 8,
+		bottom: 34, // Adjust to center relative to icon
+		width: 70,
+		borderRadius: 35,
+	},
 })
 
 export default Sentry.wrap(

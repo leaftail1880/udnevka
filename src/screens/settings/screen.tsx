@@ -75,6 +75,8 @@ const MainSettings = memo(function MainSettings(
 				Добавить группу
 			</Button>
 
+			<LogoutButton />
+
 			<SettingsJumpNavigation
 				navigation={props}
 				target={'notifs'}
@@ -101,8 +103,6 @@ const MainSettings = memo(function MainSettings(
 				target={'support'}
 				description={'Тех поддержка и юр. сведения'}
 			/>
-
-			<LogoutButton />
 
 			<View style={{ alignItems: 'center', margin: Spacings.s2 }}>
 				<HelperText type="info" style={{ textAlign: 'center' }}>
