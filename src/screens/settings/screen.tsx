@@ -1,4 +1,5 @@
 import { SettingsJumpNavigation } from '@/components/Navigate'
+import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
 import { StackScreenProps } from '@react-navigation/stack'
 import { observer } from 'mobx-react-lite'
@@ -13,10 +14,13 @@ import TermsAndConditions from './support/TermsAndConditions'
 import MicroUpdate from './update/micro-update'
 import UpdatesScreen from './update/screen'
 
+import SelectModal from '@/components/SelectModal'
+import { DropdownDataStore } from '@/services/mgik/store'
 import { Spacings } from '@/utils/Spacings'
 import * as Application from 'expo-application'
 import { memo } from 'react'
-import { HelperText } from 'react-native-paper'
+import { Button, HelperText } from 'react-native-paper'
+import LoginScreen from '../login/in'
 import { LogoutButton } from '../login/out'
 import {
 	SETTINGS_ROUTES,
@@ -44,20 +48,33 @@ export default observer(function SettingsScreen() {
 
 			<SettingsNavigation.Screen name="privacy" component={PrivacyPolicy} />
 			<SettingsNavigation.Screen name="terms" component={TermsAndConditions} />
+			<SettingsNavigation.Screen name="login" component={AddGroupScreen} />
 		</SettingsNavigation.Navigator>
 	)
 })
+
+const AddGroupScreen = () => <LoginScreen mode="add" />
 
 // eslint-disable-next-line mobx/missing-observer
 const MainSettings = memo(function MainSettings(
 	props: StackScreenProps<SettingsRoutes>,
 ) {
+	const navigation = props.navigation
 	return (
 		<ScrollView
 			contentContainerStyle={{
 				flex: 1,
 			}}
 		>
+			<SelectGroup />
+			<Button
+				mode="outlined"
+				onPress={() => navigation.navigate('login')}
+				style={{ marginHorizontal: Spacings.s2, marginVertical: Spacings.s1 }}
+			>
+				Добавить группу
+			</Button>
+
 			<SettingsJumpNavigation
 				navigation={props}
 				target={'notifs'}
@@ -96,5 +113,33 @@ const MainSettings = memo(function MainSettings(
 				</HelperText>
 			</View>
 		</ScrollView>
+	)
+})
+
+const SelectGroup = observer(function SelectGroup() {
+	if (!XSettings.currentGroupId) {
+		return null // Should not happen if logged in
+	}
+
+	return (
+		DropdownDataStore.fallback || (
+			<SelectModal
+				data={XSettings.selectedGroupIds.map(groupId => {
+					const group = DropdownDataStore.result!.groups.find(
+						g => g.id === groupId,
+					)
+					return {
+						value: groupId.toString(),
+						label: group ? group.name : `Группа ${groupId}`,
+					}
+				})}
+				mode="list.item"
+				value={XSettings.currentGroupId.toString()}
+				onSelect={group =>
+					XSettings.save({ currentGroupId: Number(group.value) })
+				}
+				label={'Группа'}
+			/>
+		)
 	)
 })

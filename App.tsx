@@ -42,13 +42,13 @@ import Loading from '@/components/Loading'
 import Toast from '@/components/Modal'
 
 // Services
-import { API } from '@/services/net-school/api'
+import { ScheduleStore } from '@/services/mgik/store'
 import '@/services/notifications/setup'
 import { SENTRY_ROUTING } from '@/services/sentry'
 
 // State
+import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { StudentsStore } from '@/services/net-school/store'
 
 // Screens
 import DiaryScreen from '@/screens/day/screen'
@@ -66,15 +66,15 @@ const ScreenIcons = {
 	[Screens.LogIn]: 'login',
 	[Screens.LogOut]: 'logout',
 	[Screens.Diary]: 'book',
-	[Screens.Totals]: 'school',
 	[Screens.Settings]: 'cog',
 }
-// Refactored route configuration to be less repetitive
+
+// Refactored route configuration
 const AppRoutes = [
 	{
 		name: Screens.LogIn,
-		component: LoginScreen,
-		hideCondition: () => API.session,
+		component: () => <LoginScreen />,
+		hideCondition: () => XSettings.currentGroupId !== undefined,
 	},
 	{
 		name: Screens.Diary,
@@ -176,18 +176,18 @@ export default Sentry.wrap(
 const Navigation = observer(function Navigation() {
 	Logger.info('NAVIGATION RENDER')
 
+	// Determine if we need a fallback screen (loading schedule)
 	let innerFallback: React.ReactNode | undefined
-	if (!API.session) {
-		innerFallback = <Loading text="Ожидание авторизации..." />
-	} else if (StudentsStore.fallback) {
-		innerFallback = StudentsStore.fallback
+	if (XSettings.currentGroupId !== undefined) {
+		if (ScheduleStore.fallback) {
+			innerFallback = ScheduleStore.fallback
+		}
 	}
 
 	let FallbackScreen: React.FC | undefined
 	if (innerFallback) {
 		FallbackScreen = () => (
 			<View>
-				{/* Show header when component's custom header is not rendered */}
 				<Header title="Загрузка..." />
 				{innerFallback}
 			</View>
@@ -195,7 +195,6 @@ const Navigation = observer(function Navigation() {
 	}
 
 	const { width } = useWindowDimensions()
-
 	const insets = useSafeAreaInsets()
 
 	return (
@@ -205,17 +204,12 @@ const Navigation = observer(function Navigation() {
 			screenOptions={{
 				headerShown: false,
 				tabBarHideOnKeyboard: true,
-				// The problem with default animation is that after upgrading to expo sdk 54 from 52, react-navigation 7
-				// and changing bottom tabs navigator from paper to rn navigation shadows are not affected by opacity
-				// hence they flicker on screen. So instead we move the screen from the screen (lol)
-
-				// Also i just found out that i like custom easing much more the default one
 				animation: 'shift',
 				transitionSpec: {
 					animation: 'timing',
 					config: {
 						duration: 300,
-						easing: Easing.out(Easing.exp), // Easing.elastic(1), // Easing.out(Easing.exp),
+						easing: Easing.out(Easing.exp),
 					},
 				},
 				sceneStyleInterpolator: ({ current }) => ({

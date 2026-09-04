@@ -1,6 +1,7 @@
 import Header from '@/components/Header'
 import { XSettings } from '@/models/settings'
 import { DropdownDataStore } from '@/services/mgik/store'
+import { useNavigation } from '@react-navigation/native'
 import { runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
 import { useState } from 'react'
@@ -8,35 +9,36 @@ import { ScrollView, View } from 'react-native'
 import { Button, Card, List, SegmentedButtons, Text } from 'react-native-paper'
 import { Spacings } from '../../utils/Spacings'
 
-export default observer(function LoginScreen() {
+type LoginMode = 'initial' | 'add'
+
+export default observer(function LoginScreen({
+	mode = 'initial',
+}: {
+	mode?: LoginMode
+}) {
 	return (
 		<View style={{ height: '100%' }}>
-			<Header title="Выбор группы" />
-			<LoginContent />
+			<Header title={mode === 'initial' ? 'Выбор группы' : 'Добавить группу'} />
+			<LoginContent mode={mode} />
 		</View>
 	)
 })
 
-const LoginContent = observer(function LoginContent() {
+const LoginContent = observer(function LoginContent({
+	mode,
+}: {
+	mode: LoginMode
+}) {
+	const navigation = useNavigation()
 	if (DropdownDataStore.fallback) return DropdownDataStore.fallback
 
 	const data = DropdownDataStore.result!
 	const [step, setStep] = useState(1)
-	const [clientType, setClientType] = useState<number | undefined>(
-		XSettings.selectedClientType,
-	)
-	const [form, setForm] = useState<number | undefined>(
-		XSettings.selectedFormOfEducation,
-	)
-	const [course, setCourse] = useState<number | undefined>(
-		XSettings.selectedCourse,
-	)
-	const [faculty, setFaculty] = useState<number | undefined>(
-		XSettings.selectedFaculty,
-	)
-	const [group, setGroup] = useState<number | undefined>(
-		XSettings.selectedGroup,
-	)
+	const [clientType, setClientType] = useState<number | undefined>(undefined)
+	const [form, setForm] = useState<number | undefined>(undefined)
+	const [course, setCourse] = useState<number | undefined>(undefined)
+	const [faculty, setFaculty] = useState<number | undefined>(undefined)
+	const [group, setGroup] = useState<number | undefined>(undefined)
 
 	const canProceed = () => {
 		switch (step) {
@@ -55,14 +57,26 @@ const LoginContent = observer(function LoginContent() {
 
 	const saveSelection = () => {
 		runInAction(() => {
-			XSettings.save({
-				selectedClientType: clientType,
-				selectedFormOfEducation: form,
-				selectedCourse: course,
-				selectedFaculty: faculty,
-				selectedGroup: group,
-			})
+			if (mode === 'initial' || XSettings.selectedGroupIds.length === 0) {
+				XSettings.save({
+					selectedGroupIds: [group!],
+					currentGroupId: group!,
+				})
+			} else {
+				if (!XSettings.selectedGroupIds.includes(group!)) {
+					XSettings.save({
+						selectedGroupIds: [...XSettings.selectedGroupIds, group!],
+						currentGroupId: group!,
+					})
+				} else {
+					XSettings.save({ currentGroupId: group! })
+				}
+			}
 		})
+		// After saving, go back if in add mode
+		if (mode === 'add') {
+			navigation.goBack()
+		}
 	}
 
 	const nextStep = () => {
@@ -183,7 +197,7 @@ const LoginContent = observer(function LoginContent() {
 			)}
 
 			<Button mode="contained" onPress={nextStep} disabled={!canProceed()}>
-				{step < 5 ? 'Далее' : 'Сохранить'}
+				{step < 5 ? 'Далее' : mode === 'add' ? 'Добавить' : 'Сохранить'}
 			</Button>
 		</ScrollView>
 	)

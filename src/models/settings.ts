@@ -1,5 +1,5 @@
 import { HoursMinutes } from '@/components/SelectTime'
-import { makeAutoObservable } from 'mobx'
+import { makeAutoObservable, runInAction } from 'mobx'
 import { Platform } from 'react-native'
 import { makeReloadPersistable } from '../utils/makePersistable'
 
@@ -15,7 +15,14 @@ export interface CustomSubject {
 	meetings: CustomSubjectMeeting[]
 }
 
-// Settings are now global, no per-student overrides
+export interface GroupSettings {
+	customSubjects: CustomSubject[]
+	lessonOrder: Record<number, Record<string, number> | undefined>
+	subjectNames: Record<string, string | undefined>
+	subjectNamesDay: Record<string, string | undefined>
+	ignoreLessons?: string[]
+}
+
 class SettingsStore {
 	notificationsEnabled = Platform.select({
 		android: true,
@@ -28,21 +35,12 @@ class SettingsStore {
 	collapseLongAssignmentText = false
 	newDatePicker = true
 
-	// Group selection (from mgik dropdown)
-	selectedClientType?: number
-	selectedFormOfEducation?: number
-	selectedCourse?: number
-	selectedFaculty?: number
-	selectedGroup?: number
+	// Group selection
+	selectedGroupIds: number[] = []
+	currentGroupId?: number
 
-	// Custom subjects (user-defined, independent of API)
-	customSubjects: CustomSubject[] = []
-
-	// Lesson overrides (still possible? we may simplify)
-	subjectNames: Record<string, string | undefined> = {}
-	subjectNamesDay: Record<string, string | undefined> = {}
-	lessonOrder: Record<number, Record<string, number> | undefined> = {}
-	ignoreLessons?: string[]
+	// Per-group overrides
+	groupOverrides: Record<number, GroupSettings> = {}
 
 	// Time override for debugging
 	overrideTimeD = Date.now()
@@ -51,6 +49,8 @@ class SettingsStore {
 	constructor() {
 		makeAutoObservable(this, {
 			fullname: false,
+			forGroup: false,
+			forCurrentGroupOrThrow: false,
 		})
 
 		makeReloadPersistable(this, {
@@ -61,16 +61,9 @@ class SettingsStore {
 				'nameFormat',
 				'collapseLongAssignmentText',
 				'newDatePicker',
-				'selectedClientType',
-				'selectedFormOfEducation',
-				'selectedCourse',
-				'selectedFaculty',
-				'selectedGroup',
-				'customSubjects',
-				'subjectNames',
-				'subjectNamesDay',
-				'lessonOrder',
-				'ignoreLessons',
+				'selectedGroupIds',
+				'currentGroupId',
+				'groupOverrides',
 				'overrideTimeD',
 				'useOverrideTime',
 			],
@@ -88,6 +81,32 @@ class SettingsStore {
 		} else {
 			return name
 		}
+	}
+
+	forGroup(groupId: number): GroupSettings {
+		const defaultSettings: GroupSettings = {
+			customSubjects: [],
+			lessonOrder: {},
+			subjectNames: {},
+			subjectNamesDay: {},
+			ignoreLessons: [],
+		}
+
+		let group = this.groupOverrides[groupId]
+		if (!group) {
+			runInAction(() => {
+				this.groupOverrides[groupId] = defaultSettings
+			})
+			group = this.groupOverrides[groupId]
+		}
+		return group
+	}
+
+	forCurrentGroupOrThrow(): GroupSettings {
+		if (!this.currentGroupId) {
+			throw new Error('No current group selected')
+		}
+		return this.forGroup(this.currentGroupId)
 	}
 }
 

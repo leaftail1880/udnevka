@@ -16,9 +16,9 @@
 		"allowSyntheticDefaultImports": true,
 		"allowImportingTsExtensions": true,
 		"paths": {
-			"@/*": ["./*"]
+			"*": ["./src/*"],
+			"@/*": ["./src/*"]
 		},
-		"baseUrl": "./src",
 		"types": ["@types/jest", "./src/global.d.ts"]
 	},
 	"include": ["App.tsx", "src"],
