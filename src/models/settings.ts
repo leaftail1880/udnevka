@@ -48,7 +48,7 @@ class SettingsStore {
 
 	// Group selection
 	selectedGroupIds: number[] = []
-	currentGroupId?: number
+	currentGroupId?: number = undefined
 
 	// Per-group overrides
 	groupOverrides: Record<number, GroupSettings> = {}

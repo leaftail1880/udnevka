@@ -74,7 +74,6 @@ autorun(() => {
 
 	ScheduleStore.withParams({
 		idGroup: currentGroupId,
-		isDo: undefined,
 	})
 })
 

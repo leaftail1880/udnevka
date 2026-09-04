@@ -5,11 +5,11 @@ import {
 	clearBackgroundInterval,
 	setBackgroundInterval,
 } from '@/utils/backgroundIntervals'
+import { autorun, makeAutoObservable, runInAction } from 'mobx'
 import notifee, {
 	AndroidImportance,
 	AndroidVisibility,
 } from 'react-native-notify-kit'
-import { autorun, makeAutoObservable, runInAction } from 'mobx'
 
 let foregroundServiceRegistered = false
 
@@ -78,11 +78,6 @@ autorun(function notificationFromSchedule() {
 
 	const { overrideTimeD, useOverrideTime } = XSettings
 	const date = new Date(useOverrideTime ? overrideTimeD : Date.now())
-
-	ScheduleStore.withParams({
-		idGroup: currentGroupId,
-		isDo: undefined,
-	})
 
 	const { result } = ScheduleStore
 	if (!result) return

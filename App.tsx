@@ -74,7 +74,10 @@ const AppRoutes = [
 	{
 		name: Screens.LogIn,
 		component: () => <LoginScreen />,
-		hideCondition: () => XSettings.currentGroupId !== undefined,
+		hideCondition: () => {
+			console.log('hide cond', XSettings.currentGroupId)
+			return XSettings.currentGroupId !== undefined
+		},
 	},
 	{
 		name: Screens.Diary,

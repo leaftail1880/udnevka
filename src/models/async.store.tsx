@@ -33,12 +33,6 @@ export type AsyncState<Result> = (
 	updateDate: string
 }
 
-/**
- * Different from Partial<T> is that it requires to define ALL keys
- * but any of them can be undefined
- */
-type Optional<T> = { [Key in Exclude<keyof T, symbol>]: T[Key] | undefined }
-
 export type AdditionalDeps = (
 	| object
 	| null
@@ -55,7 +49,7 @@ export class AsyncStore<
 	MethodName extends keyof FunctionsFromObject<Source>,
 	Fn = FunctionsFromObject<Source>[MethodName],
 	FnReturn = Fn extends AsyncMethod ? Awaited<ReturnType<Fn>> : never,
-	FnParams = Fn extends AsyncMethod ? Optional<Parameters<Fn>[0]> : never,
+	FnParams = Fn extends AsyncMethod ? Partial<Parameters<Fn>[0]> : never,
 	DefaultParams = Record<'', never>,
 > {
 	constructor(

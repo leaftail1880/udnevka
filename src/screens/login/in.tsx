@@ -4,9 +4,9 @@ import { DropdownDataStore } from '@/services/mgik/store'
 import { useNavigation } from '@react-navigation/native'
 import { runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
-import { useState } from 'react'
-import { ScrollView, View } from 'react-native'
-import { Button, Card, List, SegmentedButtons, Text } from 'react-native-paper'
+import { useMemo, useState } from 'react'
+import { FlatList, View } from 'react-native'
+import { Button, List, TextInput } from 'react-native-paper'
 import { Spacings } from '../../utils/Spacings'
 
 type LoginMode = 'initial' | 'add'
@@ -19,7 +19,7 @@ export default observer(function LoginScreen({
 	return (
 		<View style={{ height: '100%' }}>
 			<Header title={mode === 'initial' ? 'Выбор группы' : 'Добавить группу'} />
-			<LoginContent mode={mode} />
+			{DropdownDataStore.fallback || <LoginContent mode={mode} />}
 		</View>
 	)
 })
@@ -30,175 +30,78 @@ const LoginContent = observer(function LoginContent({
 	mode: LoginMode
 }) {
 	const navigation = useNavigation()
-	if (DropdownDataStore.fallback) return DropdownDataStore.fallback
-
 	const data = DropdownDataStore.result!
-	const [step, setStep] = useState(1)
-	const [clientType, setClientType] = useState<number | undefined>(undefined)
-	const [form, setForm] = useState<number | undefined>(undefined)
-	const [course, setCourse] = useState<number | undefined>(undefined)
-	const [faculty, setFaculty] = useState<number | undefined>(undefined)
-	const [group, setGroup] = useState<number | undefined>(undefined)
+	const [selectedGroupId, setSelectedGroupId] = useState<number | undefined>(
+		undefined,
+	)
+	const [search, setSearch] = useState('')
 
-	const canProceed = () => {
-		switch (step) {
-			case 1:
-				return clientType !== undefined
-			case 2:
-				return form !== undefined
-			case 3:
-				return course !== undefined
-			case 4:
-				return faculty !== undefined
-			case 5:
-				return group !== undefined
-		}
-	}
+	const filteredGroups = useMemo(() => {
+		if (!search.trim()) return data.groups
+		const lower = search.toLowerCase()
+		return data.groups.filter(g => g.name.toLowerCase().includes(lower))
+	}, [data.groups, search])
+
+	const canSave = !!selectedGroupId
 
 	const saveSelection = () => {
+		console.log({ selectedGroupId })
+		if (!selectedGroupId) return
 		runInAction(() => {
-			if (mode === 'initial' || XSettings.selectedGroupIds.length === 0) {
+			if (mode === 'initial') {
 				XSettings.save({
-					selectedGroupIds: [group!],
-					currentGroupId: group!,
+					selectedGroupIds: [selectedGroupId],
+					currentGroupId: selectedGroupId,
 				})
+				console.log(XSettings.currentGroupId)
 			} else {
-				if (!XSettings.selectedGroupIds.includes(group!)) {
+				if (!XSettings.selectedGroupIds.includes(selectedGroupId)) {
 					XSettings.save({
-						selectedGroupIds: [...XSettings.selectedGroupIds, group!],
-						currentGroupId: group!,
+						selectedGroupIds: [...XSettings.selectedGroupIds, selectedGroupId],
+						currentGroupId: selectedGroupId,
 					})
 				} else {
-					XSettings.save({ currentGroupId: group! })
+					XSettings.save({ currentGroupId: selectedGroupId })
 				}
 			}
 		})
-		// After saving, go back if in add mode
 		if (mode === 'add') {
 			navigation.goBack()
 		}
 	}
 
-	const nextStep = () => {
-		if (step < 5) setStep(step + 1)
-		else {
-			saveSelection()
-		}
-	}
-
 	return (
-		<ScrollView
-			contentContainerStyle={{ padding: Spacings.s2, gap: Spacings.s2 }}
-		>
-			<Text variant="titleMedium">Шаг {step} из 5</Text>
-
-			{step === 1 && (
-				<Card>
-					<Card.Title title="Тип клиента" />
-					<Card.Content>
-						<SegmentedButtons
-							buttons={data.clientTypes.map(ct => ({
-								label: ct.type === 0 ? 'Группа' : 'Индивидуально',
-								value: ct.type.toString(),
-							}))}
-							value={clientType?.toString() ?? ''}
-							onValueChange={v => setClientType(parseInt(v))}
-						/>
-					</Card.Content>
-				</Card>
-			)}
-
-			{step === 2 && (
-				<Card>
-					<Card.Title title="Форма обучения" />
-					<Card.Content>
-						{data.formsOfEducation.map(fo => (
-							<List.Item
-								key={fo.id}
-								title={fo.name}
-								onPress={() => setForm(fo.id)}
-								left={props => (
-									<List.Icon
-										{...props}
-										icon={form === fo.id ? 'check' : 'blank'}
-									/>
-								)}
+		<View style={{ flex: 1 }}>
+			<View style={{ padding: Spacings.s2 }}>
+				<TextInput
+					placeholder="Поиск группы"
+					value={search}
+					onChangeText={setSearch}
+					style={{ marginBottom: Spacings.s2 }}
+				/>
+			</View>
+			<FlatList
+				data={filteredGroups}
+				keyExtractor={item => item.id.toString()}
+				renderItem={({ item }) => (
+					<List.Item
+						title={item.name}
+						onPress={() => setSelectedGroupId(item.id)}
+						left={props => (
+							<List.Icon
+								{...props}
+								icon={item.id === selectedGroupId ? 'check' : 'blank'}
 							/>
-						))}
-					</Card.Content>
-				</Card>
-			)}
-
-			{step === 3 && (
-				<Card>
-					<Card.Title title="Курс" />
-					<Card.Content>
-						{data.courses.map(c => (
-							<List.Item
-								key={c.course}
-								title={`${c.course} курс`}
-								onPress={() => setCourse(c.course)}
-								left={props => (
-									<List.Icon
-										{...props}
-										icon={course === c.course ? 'check' : 'blank'}
-									/>
-								)}
-							/>
-						))}
-					</Card.Content>
-				</Card>
-			)}
-
-			{step === 4 && (
-				<Card>
-					<Card.Title title="Факультет" />
-					<Card.Content>
-						<ScrollView style={{ maxHeight: 300 }}>
-							{data.faculties.map(f => (
-								<List.Item
-									key={f.id}
-									title={f.name}
-									onPress={() => setFaculty(f.id)}
-									left={props => (
-										<List.Icon
-											{...props}
-											icon={faculty === f.id ? 'check' : 'blank'}
-										/>
-									)}
-								/>
-							))}
-						</ScrollView>
-					</Card.Content>
-				</Card>
-			)}
-
-			{step === 5 && (
-				<Card>
-					<Card.Title title="Группа" />
-					<Card.Content>
-						<ScrollView style={{ maxHeight: 300 }}>
-							{data.groups.map(g => (
-								<List.Item
-									key={g.id}
-									title={g.name}
-									onPress={() => setGroup(g.id)}
-									left={props => (
-										<List.Icon
-											{...props}
-											icon={group === g.id ? 'check' : 'blank'}
-										/>
-									)}
-								/>
-							))}
-						</ScrollView>
-					</Card.Content>
-				</Card>
-			)}
-
-			<Button mode="contained" onPress={nextStep} disabled={!canProceed()}>
-				{step < 5 ? 'Далее' : mode === 'add' ? 'Добавить' : 'Сохранить'}
-			</Button>
-		</ScrollView>
+						)}
+					/>
+				)}
+				contentContainerStyle={{ paddingHorizontal: Spacings.s2 }}
+			/>
+			<View style={{ padding: Spacings.s2 }}>
+				<Button mode="contained" onPress={saveSelection} disabled={!canSave}>
+					{mode === 'add' ? 'Добавить' : 'Сохранить'}
+				</Button>
+			</View>
+		</View>
 	)
 })

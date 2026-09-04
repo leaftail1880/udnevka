@@ -66,6 +66,7 @@ const Config = {
 			'expo-sharing',
 			'expo-status-bar',
 			'react-native-notify-kit',
+			'@react-native-vector-icons/material-icons',
 			// 'expo-build-properties',
 			['@sentry/react-native', sentry],
 			[
