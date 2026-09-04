@@ -51,8 +51,6 @@ export type AdditionalDeps = (
 
 const firstTimeCacheUsedFor = new Set<string>()
 
-type A = FunctionsFromObject<ScheduleClient>
-
 export class AsyncStore<
 	Source extends object,
 	MethodName extends keyof FunctionsFromObject<Source>,
