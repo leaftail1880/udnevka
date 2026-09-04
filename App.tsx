@@ -111,7 +111,7 @@ const CustomTabBar = observer(function CustomTabBar({
 	return (
 		<BottomNavigation.Bar
 			navigationState={state}
-			safeAreaInsets={insets}
+			// safeAreaInsets={insets}
 			onTabPress={({ route, preventDefault }) => {
 				const event = navigation.emit({
 					type: 'tabPress',
@@ -130,10 +130,17 @@ const CustomTabBar = observer(function CustomTabBar({
 			}}
 			renderIcon={({ route, color }) => {
 				const iconName = ScreenIcons[route.name as keyof typeof ScreenIcons]
-				return <Icon source={iconName} color={color} size={23} />
+				return (
+					<View style={{ paddingBottom: 10 }}>
+						<Icon source={iconName} color={color} size={23} />
+					</View>
+				)
 			}}
+			shifting={false}
+			labeled={true}
 			getLabelText={({ route }) => route.name}
 			activeColor={Theme.colors.onPrimaryContainer}
+			activeIndicatorStyle={{ top: 30 }}
 			inactiveColor={Theme.colors.onSurfaceVariant}
 			style={{
 				backgroundColor: Theme.colors.navigationBar,
@@ -207,7 +214,7 @@ const Navigation = observer(function Navigation() {
 			screenOptions={{
 				headerShown: false,
 				tabBarHideOnKeyboard: true,
-				animation: 'shift',
+				// animation: 'shift',
 				transitionSpec: {
 					animation: 'timing',
 					config: {
