@@ -9,9 +9,8 @@ import {
 const version = '0.26.7'
 const slug = 'udnevka'
 const name = 'Udnevka'
-const projectId = '97163afe-5c7e-4856-ba8f-348e00aa7c04'
+const projectId = '50974a14-e146-4aac-8aa5-265811d17456'
 
-// @ts-expect-error
 // eslint-disable-next-line no-undef
 const IS_DEV = !!process.env.DEV
 
@@ -45,10 +44,6 @@ const Config = {
 			},
 		},
 
-		androidNavigationBar: {
-			enforceContrast: false, // make navigation bar in android transparent with edge to edge enabled
-		},
-
 		android: {
 			package: id,
 			userInterfaceStyle: 'automatic',
@@ -58,7 +53,6 @@ const Config = {
 				'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
 			],
 			softwareKeyboardLayoutMode: 'pan',
-			edgeToEdgeEnabled: true,
 			adaptiveIcon: {
 				foregroundImage: './assets/adaptive-icon.png',
 				backgroundColor: splashBackgroundLight,
