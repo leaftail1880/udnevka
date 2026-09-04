@@ -10,7 +10,6 @@ import {
 } from 'mobx'
 import { RefreshControl } from 'react-native'
 import { Logger } from '../constants'
-import { ScheduleClient } from '../services/mgik/api'
 
 export type AsyncMethod = (
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
