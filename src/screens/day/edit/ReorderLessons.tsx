@@ -1,186 +1,201 @@
 import { ChipLike } from '@/components/ChipLike'
 import { getSubjectName } from '@/components/SubjectName'
 import { globalStyles } from '@/constants'
-import { StudentSettings, XSettings } from '@/models/settings'
+import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { Lesson } from '@/services/net-school/lesson'
-import { DiaryStore } from '@/services/net-school/store'
+import { ScheduleItem } from '@/services/mgik/api'
+import { ScheduleStore } from '@/services/mgik/store'
 import { Spacings } from '@/utils/Spacings'
 import { makeAutoObservable, runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
 import { useCallback } from 'react'
 import {
-  ListRenderItem,
-  StyleSheet,
-  TouchableOpacity,
-  TouchableOpacityProps,
-  View,
+	ListRenderItem,
+	StyleSheet,
+	TouchableOpacity,
+	TouchableOpacityProps,
+	View,
 } from 'react-native'
 import { Button, Text } from 'react-native-paper'
 import ReorderableList, {
-  ReorderableListReorderEvent,
-  useReorderableDrag,
+	ReorderableListReorderEvent,
+	useReorderableDrag,
 } from 'react-native-reorderable-list'
 import { LessonTimeChip } from '../Lesson'
-import { DAY_NAMES_SHORT } from '../state'
+import { DAY_NAMES_SHORT, DiaryState } from '../state'
 import { setLessonTimeOffset } from './state'
 
 const reorderState = new (class {
-  constructor() {
-    makeAutoObservable(this, {}, { autoBind: true })
-  }
+	constructor() {
+		makeAutoObservable(this, {}, { autoBind: true })
+	}
 
-  key = 0
-  lessons: Lesson[] = []
+	key = 0
+	lessons: ScheduleItem[] = []
 
-  reset() {
-    const studentSettings = XSettings.forStudentOrThrow()
-    studentSettings.lessonOrder = {}
+	reset() {
+		const groupSettings = XSettings.forCurrentGroupOrThrow()
+		groupSettings.lessonOrder = {}
 
-    this.key++
-    this.lessons = []
-  }
+		this.key++
+		this.lessons = []
+	}
 })()
 
 function replaceItems<T>(array: T[], from: number, to: number): T[] {
-  array = array.slice()
-    ;[array[from], array[to]] = [array[to], array[from]]
-  return array
+	array = array.slice()
+	;[array[from], array[to]] = [array[to], array[from]]
+	return array
 }
 
 export const EditDiaryReorderLessons = observer(function DiaryEditDay() {
-  const lessons = DiaryStore.result!.lessons
-  const studentSettings = XSettings.forStudentOrThrow()
-  const lessonsSorted =
-    reorderState.lessons.length === 0
-      ? sortByDate(lessons.slice(), studentSettings)
-      : reorderState.lessons
+	const schedule = ScheduleStore.result!
+	const dayLessons = schedule.filter(
+		item => item.date.toYYYYMMDD() === DiaryState.day,
+	)
+	const groupSettings = XSettings.forCurrentGroupOrThrow()
+	const lessonsSorted =
+		reorderState.lessons.length === 0
+			? sortByDate(dayLessons.slice(), groupSettings)
+			: reorderState.lessons
 
-  const onReorder = useCallback(
-    (args: ReorderableListReorderEvent) => {
-      runInAction(() => {
-        reorderState.lessons = replaceItems(lessonsSorted, args.from, args.to)
-        reorderState.key++
-        const { to, offset, from } = getOffset(
-          lessonsSorted,
-          args.from,
-          args.to,
-        )
+	const onReorder = useCallback(
+		(args: ReorderableListReorderEvent) => {
+			runInAction(() => {
+				reorderState.lessons = replaceItems(lessonsSorted, args.from, args.to)
+				reorderState.key++
+				const { to, offset, from } = getOffset(
+					lessonsSorted,
+					args.from,
+					args.to,
+				)
 
-        setLessonTimeOffset(to, offset, studentSettings)
-        setLessonTimeOffset(from, -offset, studentSettings)
-      })
-    },
-    [lessonsSorted, studentSettings],
-  )
+				setLessonTimeOffset(to.id, offset, groupSettings)
+				setLessonTimeOffset(from.id, -offset, groupSettings)
+			})
+		},
+		[lessonsSorted, groupSettings],
+	)
 
-  return (
-    <View>
-      <View style={localStyles.padding}>
-        <Text>
-          Для изменения порядка предметов удерживайте предмет и перетащите его
-          на место того, который нужно заменить.
-        </Text>
-        <Button onPress={reorderState.reset}>Сбросить</Button>
-      </View>
-      <ReorderableList
-        data={lessonsSorted}
-        keyExtractor={keyExtractor}
-        renderItem={RenderDiaryLessonDraggable}
-        onReorder={onReorder}
-        contentContainerStyle={localStyles.reordableList}
-        key={reorderState.key.toString()}
-      />
-    </View>
-  )
+	return (
+		<View>
+			<View style={localStyles.padding}>
+				<Text>
+					Для изменения порядка предметов удерживайте предмет и перетащите его
+					на место того, который нужно заменить.
+				</Text>
+				<Button onPress={reorderState.reset}>Сбросить</Button>
+			</View>
+			<ReorderableList
+				data={lessonsSorted}
+				keyExtractor={keyExtractor}
+				renderItem={RenderDiaryLessonDraggable}
+				onReorder={onReorder}
+				contentContainerStyle={localStyles.reordableList}
+				key={reorderState.key.toString()}
+			/>
+		</View>
+	)
 })
 
 const localStyles = StyleSheet.create({
-  reordableList: {
-    paddingHorizontal: Spacings.s1,
-  },
-  padding: { padding: Spacings.s2 },
+	reordableList: {
+		paddingHorizontal: Spacings.s1,
+	},
+	padding: { padding: Spacings.s2 },
 })
 
-function keyExtractor(lesson: Lesson) {
-  return lesson.classmeetingId.toString()
+function keyExtractor(lesson: ScheduleItem) {
+	return lesson.id.toString()
 }
 
 function getOffset(
-  lessonsSorted: Lesson[],
-  toIndex: number,
-  fromIndex: number,
+	lessonsSorted: ScheduleItem[],
+	toIndex: number,
+	fromIndex: number,
 ) {
-  const to = lessonsSorted[toIndex]
-  const from = lessonsSorted[fromIndex]
-  const offset = from.startDate.getTime() - to.startDate.getTime()
-  return { to, offset, from }
+	const to = lessonsSorted[toIndex]
+	const from = lessonsSorted[fromIndex]
+	const offset = from.startTime.getTime() - to.startTime.getTime()
+	return { to, offset, from }
 }
 
 const DiaryLessonDraggable = observer(function DraggableLesson({
-  item: lesson,
+	item: lesson,
 }: {
-  item: Lesson
+	item: ScheduleItem
 }) {
-  const drag = useReorderableDrag()
+	const drag = useReorderableDrag()
 
-  return <DiaryLessonShort onLongPress={drag} lesson={lesson} />
+	return <DiaryLessonShort onLongPress={drag} lesson={lesson} />
 })
 
 export const DiaryLessonShort = observer(function DraggableLesson({
-  lesson: lesson,
-  isEdited,
-  ...props
+	lesson,
+	isEdited,
+	...props
 }: {
-  lesson: Lesson
-  isEdited?: boolean
+	lesson: ScheduleItem
+	isEdited?: boolean
 } & TouchableOpacityProps) {
-  const studentSettings = XSettings.forStudentOrThrow()
-  const isMoved = !!studentSettings.lessonOrder[lesson.offsetId]?.[lesson.dayId]
-  const isIgnored = lesson.isIgnored(studentSettings)
+	const groupSettings = XSettings.forCurrentGroupOrThrow()
+	const isMoved = !!groupSettings.lessonOrder[lesson.id]
+	const isIgnored = groupSettings.ignoreLessons?.includes(lesson.id.toString())
 
-  return (
-    <TouchableOpacity
-      style={[
-        {
-          backgroundColor:
-            isEdited ? Theme.colors.primaryContainer : isMoved
-              ? Theme.colors.elevation.level3 : isIgnored ? Theme.colors.surfaceDisabled
-                : Theme.colors.elevation.level1,
-        },
-        globalStyles.row,
-        {
-          gap: Spacings.s1,
-          alignItems: 'center',
-          paddingLeft: Spacings.s2,
-          flexWrap: 'nowrap',
-          padding: Spacings.s1 / 2,
-        },
-      ]}
-      {...props}
-    >
-      <ChipLike>
-        {DAY_NAMES_SHORT[lesson.start(studentSettings).getDayFromMonday()]}
-      </ChipLike>
-      <LessonTimeChip lesson={lesson}></LessonTimeChip>
-      <Text style={Theme.fonts.titleSmall}>{getSubjectName(lesson)}</Text>
-    </TouchableOpacity>
-  )
+	return (
+		<TouchableOpacity
+			style={[
+				{
+					backgroundColor: isEdited
+						? Theme.colors.primaryContainer
+						: isMoved
+							? Theme.colors.elevation.level3
+							: isIgnored
+								? Theme.colors.surfaceDisabled
+								: Theme.colors.elevation.level1,
+				},
+				globalStyles.row,
+				{
+					gap: Spacings.s1,
+					alignItems: 'center',
+					paddingLeft: Spacings.s2,
+					flexWrap: 'nowrap',
+					padding: Spacings.s1 / 2,
+				},
+			]}
+			{...props}
+		>
+			<ChipLike>
+				{DAY_NAMES_SHORT[lesson.startTime.getDayFromMonday()]}
+			</ChipLike>
+			<LessonTimeChip lesson={lesson} />
+			<Text style={Theme.fonts.titleSmall}>
+				{getSubjectName({
+					discipline: lesson.discipline,
+					offsetDayId: lesson.id.toString(),
+				})}
+			</Text>
+		</TouchableOpacity>
+	)
 })
 
 // eslint-disable-next-line mobx/missing-observer
-export const RenderDiaryLessonDraggable: ListRenderItem<Lesson> = args => (
-  <DiaryLessonDraggable {...args} />
-)
+export const RenderDiaryLessonDraggable: ListRenderItem<
+	ScheduleItem
+> = args => <DiaryLessonDraggable {...args} />
 
 export function sortByDate(
-  lessons: Lesson[],
-  studentSettings: StudentSettings,
-  realTime = false,
+	lessons: ScheduleItem[],
+	groupSettings: ReturnType<typeof XSettings.forCurrentGroupOrThrow>,
+	realTime = false,
 ) {
-  return lessons.sort((a, b) => {
-    const aDate = realTime ? a.startDate : a.start(studentSettings)
-    const bDate = realTime ? b.startDate : b.start(studentSettings)
-    return aDate.getTime() - bDate.getTime()
-  })
+	return lessons.sort((a, b) => {
+		const aDate = realTime
+			? a.startTime
+			: new Date(a.startTime.getTime() + (groupSettings.lessonOrder[a.id] ?? 0))
+		const bDate = realTime
+			? b.startTime
+			: new Date(b.startTime.getTime() + (groupSettings.lessonOrder[b.id] ?? 0))
+		return aDate.getTime() - bDate.getTime()
+	})
 }

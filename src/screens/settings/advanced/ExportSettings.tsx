@@ -42,11 +42,14 @@ export const ExportImportSettings = observer(function ExportImportSettings() {
 							formatVersion: currentFormatVersion,
 							appVersion: nativeApplicationVersion ?? '0.0.0',
 							storages: storages
-								.map(e => ({
-									formatVersion: currentFormatVersion,
-									id: e.key,
-									content: getStorageValue(e.key),
-								}))
+								.map(
+									e =>
+										({
+											formatVersion: currentFormatVersion as number,
+											id: e.key,
+											content: getStorageValue(e.key),
+										}) as ExportedUdnevkaSettingsFormat['storages'][number],
+								)
 								.filter(e => !!e.content),
 						}
 

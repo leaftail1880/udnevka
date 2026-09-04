@@ -1,5 +1,4 @@
 import { Theme } from '@/models/theme'
-import { NetSchoolError } from '@/services/net-school/api'
 import { Spacings } from '@/utils/Spacings'
 import { useState } from 'react'
 import { View } from 'react-native'
@@ -20,7 +19,6 @@ export default function ErrorHandler({
 }: ErrorHandlerProps) {
 	const [more, setMore] = useState<boolean>(false)
 	const errorString = RequestError.stringify(error[1])
-	const useCache = error[1] instanceof NetSchoolError && error[1].useCache
 	return (
 		<View
 			style={{
@@ -39,7 +37,6 @@ export default function ErrorHandler({
 				Ошибка{error[0] ? ` (${error[0]})` : ''}
 			</Text>
 			<Text>При загрузке данных {name}</Text>
-			{useCache && <Text>Нет данных в кэше для отображения.</Text>}
 			{errorString === RequestErrorReason.noConnection && <Text>Нет сети</Text>}
 			{more && <Text selectable>{errorString}</Text>}
 
@@ -50,15 +47,6 @@ export default function ErrorHandler({
 				<Button onPress={reload} icon="reload" mode="elevated">
 					Попробовать снова
 				</Button>
-				{/* {!beforeAuth && (
-					<Button
-						onPress={() => {
-							Sentry.captureException(error)
-						}}
-					>
-						<Text>Отправить отчет об ошибке разработчику</Text>
-					</Button>
-				)} */}
 			</View>
 		</View>
 	)

@@ -139,7 +139,7 @@ const state = new (class {
 })()
 
 export const EditDiaryAddLesson = observer(function EditDiaryAddLesson() {
-	const settings = XSettings.forStudentOrThrow()
+	const groupSettings = XSettings.forCurrentGroupOrThrow()
 	return (
 		<ScrollView
 			style={{ padding: Spacings.s2 }}
@@ -167,7 +167,7 @@ export const EditDiaryAddLesson = observer(function EditDiaryAddLesson() {
 						Назад
 					</Button>
 					<CustomSubjectRender
-						customSubject={settings.customSubjects[state.editing]}
+						customSubject={groupSettings.customSubjects[state.editing]}
 					/>
 				</>
 			) : (
@@ -176,7 +176,7 @@ export const EditDiaryAddLesson = observer(function EditDiaryAddLesson() {
 						mode="contained-tonal"
 						onPress={() => {
 							runInAction(() => {
-								const i = settings.customSubjects.unshift({
+								const i = groupSettings.customSubjects.unshift({
 									name: '',
 									meetings: [],
 								})
@@ -186,7 +186,7 @@ export const EditDiaryAddLesson = observer(function EditDiaryAddLesson() {
 					>
 						Создать новый тип
 					</Button>
-					{settings.customSubjects.map((e, i) => (
+					{groupSettings.customSubjects.map((e, i) => (
 						<CustomSubjectDescription
 							customSubject={e}
 							i={i}
@@ -220,8 +220,8 @@ const CustomSubjectDescription = observer(function CustomSubjectDescription({
 				icon="delete"
 				onPress={() => {
 					runInAction(() => {
-						const settings = XSettings.forStudentOrThrow()
-						settings.customSubjects = settings.customSubjects.filter(
+						const groupSettings = XSettings.forCurrentGroupOrThrow()
+						groupSettings.customSubjects = groupSettings.customSubjects.filter(
 							e => e !== customSubject,
 						)
 					})

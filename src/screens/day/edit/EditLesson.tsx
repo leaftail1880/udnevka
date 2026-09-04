@@ -4,8 +4,8 @@ import {
 } from '@/components/SubjectName'
 import UpdateDate from '@/components/UpdateDate'
 import { XSettings } from '@/models/settings'
-import { Lesson } from '@/services/net-school/lesson'
-import { DiaryStore } from '@/services/net-school/store'
+import { ScheduleItem } from '@/services/mgik/api'
+import { ScheduleStore } from '@/services/mgik/store'
 import { Spacings } from '@/utils/Spacings'
 import { ModalAlert } from '@/utils/Toast'
 import { runInAction } from 'mobx'
@@ -18,6 +18,7 @@ import {
 	View,
 } from 'react-native'
 import { Button, Text } from 'react-native-paper'
+import { DiaryState } from '../state'
 import { EditSingleLesson } from './EditSingleLesson'
 import { DiaryLessonShort } from './ReorderLessons'
 
@@ -26,23 +27,26 @@ export const EditDiaryEditLesson = observer(function EditDiaryEditLesson() {
 })
 
 const Screen = observer(function Screen() {
-	const lessons = DiaryStore.result!.lessons
+	const schedule = ScheduleStore.result!
+	const dayLessons = schedule.filter(
+		item => item.date.toYYYYMMDD() === DiaryState.day,
+	)
 	return (
 		<FlatList
-			data={lessons}
+			data={dayLessons}
 			renderItem={renderItem}
 			ListHeaderComponent={
 				<View style={{ padding: Spacings.s2 }}>
 					<Text>
 						Нажмите на предмет, чтобы переименовать или изменить его время для
-						конкретного дня. Измененные предметы выделенны цветом.
+						конкретного дня. Измененные предметы выделены цветом.
 					</Text>
 					<Button
 						onPress={() => {
 							runInAction(() => {
-								const settings = XSettings.forStudentOrThrow()
-								settings.subjectNamesDay = {}
-								settings.lessonOrder = {}
+								const groupSettings = XSettings.forCurrentGroupOrThrow()
+								groupSettings.subjectNamesDay = {}
+								groupSettings.lessonOrder = {}
 							})
 						}}
 					>
@@ -57,20 +61,28 @@ const Screen = observer(function Screen() {
 	)
 })
 
-const renderItem: ListRenderItem<Lesson> = args => <DiaryLessonItem {...args} />
+const renderItem: ListRenderItem<ScheduleItem> = args => (
+	<DiaryLessonItem {...args} />
+)
 
 const DiaryLessonItem = observer(function DiaryLessonItem(
-	props: ListRenderItemInfo<Lesson>,
+	props: ListRenderItemInfo<ScheduleItem>,
 ) {
 	const onPress = useCallback(() => {
 		ModalAlert.show('Редактировать', <EditSingleLesson lesson={props.item} />)
 	}, [props.item])
-	const settings = XSettings.forStudentOrThrow()
+	const groupSettings = XSettings.forCurrentGroupOrThrow()
 	return (
 		<DiaryLessonShort
 			isEdited={
-				getSubjectName(props.item) !==
-				getOverridenOrOfficalName(props.item, settings)
+				getSubjectName({
+					discipline: props.item.discipline,
+					offsetDayId: props.item.id.toString(),
+				}) !==
+				getOverridenOrOfficalName(
+					{ discipline: props.item.discipline },
+					groupSettings,
+				)
 			}
 			lesson={props.item}
 			onPress={onPress}

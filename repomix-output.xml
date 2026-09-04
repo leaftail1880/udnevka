@@ -1,10 +1,10 @@
-This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
 
 <file_summary>
 This section contains a summary of this file.
 
 <purpose>
-This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+This file contains a packed representation of the entire repository's contents.
 It is designed to be easily consumable by AI systems for analysis, code review,
 or other automated processes.
 </purpose>
@@ -32,7 +32,6 @@ The content is organized as follows:
 <notes>
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: screens/settings, sentry, github
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Files are sorted by Git change count (files with more changes are at the bottom)
@@ -41,146 +40,1017 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
-[src/services]/
-  mgik/
-    api.ts
-  net-school/
-    entities.ts
-    lesson.ts
-    store.ts
-  notifications/
-    lesson.ts
-    setup.ts
-  sentry.ts
+[src/components]/
+  ChipLike.tsx
+  Chips.tsx
+  ErrorHandler.tsx
+  Header.tsx
+  Loading.tsx
+  Modal.tsx
+  Navigate.tsx
+  NumberInput.tsx
+  RoundedSurface.tsx
+  ScrollTextCopyable.tsx
+  SelectModal.tsx
+  SelectTime.tsx
+  Size.spec.tsx
+  Size.tsx
+  SubjectName.tsx
+  SwitchSetting.tsx
+  ToggleChip.tsx
+  UpdateDate.tsx
 
-[src/screens]/
-  day/
-    edit/
-      AddLesson.tsx
-      EditLesson.tsx
-      EditSingleLesson.tsx
-      ReorderLessons.tsx
-      Screen.tsx
-      Select.tsx
-      state.ts
-    Day.tsx
-    Lesson.tsx
-    Progress.tsx
-    screen.tsx
-    state.tsx
-  login/
-    in.tsx
-    out.tsx
-  settings/
-    advanced/
-      Advanced.tsx
-      ExportSettings.tsx
-    colors/
-      AccentColorPicker.tsx
-      Appearance.tsx
-    notifications/
-      Notifications.tsx
-    support/
-      PrivacyPolicy.tsx
-      Support.tsx
-      TermsAndConditions.tsx
-    update/
-      Chips.tsx
-      micro-update.tsx
-      Release.tsx
-      ReleaseBody.tsx
-      screen.tsx
-      state.ts
-      UpdateInfo.tsx
-      utils.ts
-      Warnings.tsx
-    navigation.ts
-    screen.tsx
+[src/screens/day]/
+  edit/
+    AddLesson.tsx
+    EditLesson.tsx
+    EditSingleLesson.tsx
+    ReorderLessons.tsx
+    Screen.tsx
+    Select.tsx
+    state.ts
+  Day.tsx
+  Lesson.tsx
+  Progress.tsx
+  screen.tsx
+  state.tsx
 
-[src/models]/
-  async.store.tsx
-  key.store.tsx
-  settings.ts
-  theme.ts
+[src/utils]/
+  backgroundIntervals.ts
+  calculateMarks.test.ts
+  calculateMarks.ts
+  configure.ts
+  createTheme.ts
+  makePersistable.ts
+  polyfill.ts
+  RequestError.ts
+  search.ts
+  setInAction.ts
+  Spacings.ts
+  Toast.ts
+  useStyles.ts
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
 
-<file path="src/services/notifications/setup.ts">
-import { XSettings } from '@/models/settings'
-import notifee, { AuthorizationStatus } from '@notifee/react-native'
-import * as Device from 'expo-device'
-import { autorun } from 'mobx'
-import { Toast } from '../../utils/Toast'
-import { setupLessonChannel } from './lesson'
+<file path="src/components/ErrorHandler.tsx">
+import { Theme } from '@/models/theme'
+import { NetSchoolError } from '@/services/net-school/api'
+import { Spacings } from '@/utils/Spacings'
+import { useState } from 'react'
+import { View } from 'react-native'
+import { Button, Text } from 'react-native-paper'
+import { RequestError, RequestErrorReason } from '../utils/RequestError'
 
-notifee.onBackgroundEvent(async () => {
-	// TODO React on event, e.g. open approprietary screen etc
-})
+interface ErrorHandlerProps {
+	error: [number, Error]
+	reload: () => void
+	name: string
+}
 
-autorun(function lessonNotificationSetup() {
-	setupLessonChannel()
+// eslint-disable-next-line mobx/missing-observer
+export default function ErrorHandler({
+	error,
+	reload,
+	name,
+}: ErrorHandlerProps) {
+	const [more, setMore] = useState<boolean>(false)
+	const errorString = RequestError.stringify(error[1])
+	const useCache = error[1] instanceof NetSchoolError && error[1].useCache
+	return (
+		<View
+			style={{
+				flex: 1,
+				width: '100%',
+				alignItems: 'center',
+			}}
+		>
+			<Text
+				style={{
+					fontSize: 18,
+					fontWeight: 'bold',
+					color: Theme.colors.error,
+				}}
+			>
+				Ошибка{error[0] ? ` (${error[0]})` : ''}
+			</Text>
+			<Text>При загрузке данных {name}</Text>
+			{useCache && <Text>Нет данных в кэше для отображения.</Text>}
+			{errorString === RequestErrorReason.noConnection && <Text>Нет сети</Text>}
+			{more && <Text selectable>{errorString}</Text>}
 
-	if (XSettings.notificationsEnabled) {
-		if (Device.isDevice) {
-			// Required for iOS
-			// See https://notifee.app/react-native/docs/ios/permissions
-			notifee.requestPermission().then(({ authorizationStatus }) => {
-				if (authorizationStatus === AuthorizationStatus.DENIED) {
-					// Permission denied, disable
-					XSettings.save({ notificationsEnabled: false })
-				}
-			})
-		} else {
-			// Not an device, show error toast and disable
-			Toast.show({
-				title: 'Уведомления недоступны вне устройства',
-				error: true,
-			})
-			XSettings.save({ notificationsEnabled: false })
-		}
-	}
+			<View style={{ gap: Spacings.s2, margin: Spacings.s2 }}>
+				<Button onPress={() => setMore(!more)} mode="elevated">
+					<Text>{!more ? 'Подробнее' : 'Свернуть'}</Text>
+				</Button>
+				<Button onPress={reload} icon="reload" mode="elevated">
+					Попробовать снова
+				</Button>
+				{/* {!beforeAuth && (
+					<Button
+						onPress={() => {
+							Sentry.captureException(error)
+						}}
+					>
+						<Text>Отправить отчет об ошибке разработчику</Text>
+					</Button>
+				)} */}
+			</View>
+		</View>
+	)
+}
+</file>
+
+<file path="src/components/Header.tsx">
+import { Theme } from '@/models/theme'
+import { observer } from 'mobx-react-lite'
+import { Appbar } from 'react-native-paper'
+
+export default observer(function Header(props: {
+	title: string
+	children?: React.ReactNode
+}) {
+	return (
+		<Appbar.Header style={{ backgroundColor: Theme.colors.navigationBar }}>
+			{props.children}
+			<Appbar.Content
+				titleStyle={{
+					fontWeight: 'bold',
+					fontSize: 20,
+					color: Theme.colors.onSurface,
+				}}
+				title={props.title}
+			/>
+		</Appbar.Header>
+	)
 })
 </file>
 
-<file path="src/services/sentry.ts">
-import * as Sentry from '@sentry/react-native'
-import * as updates from 'expo-updates'
+<file path="src/components/Loading.tsx">
+import { StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Text } from 'react-native-paper'
+import { Spacings } from '../utils/Spacings'
 
-// Construct a new instrumentation instance. This is needed to communicate between the integration and React
-export const SENTRY_ROUTING = Sentry.reactNavigationIntegration({
-	enableTimeToInitialDisplay: true,
-})
-
-const manifest = updates.manifest
-const metadata =
-	manifest && 'metadata' in manifest ? manifest.metadata : undefined
-const extra = manifest && 'metadata' in manifest ? manifest.extra : undefined
-const updateGroup =
-	metadata && 'updateGroup' in metadata ? metadata.updateGroup : undefined
-const owner = extra?.expoClient?.owner ?? '[account]'
-const slug = extra?.expoClient?.slug ?? '[project]'
-
-Sentry.setContext('expo', {
-	'update-id': updates.updateId,
-	'is-embeded-update': updates.isEmbeddedLaunch,
-	'update-group': updateGroup,
-	'debug-url': `https://expo.dev/accounts/${owner}/projects/${slug}/updates/${updateGroup}`,
-})
-
-if (!__TEST__) {
-	Sentry.init({
-		dsn: 'https://9f602cf540f26a8de9d5d708df4558b3@o4506601427369984.ingest.sentry.io/4506601430122496',
-		// Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
-		tracesSampleRate: 0.9,
-		profilesSampleRate: 0.9,
-		ignoreErrors: [/Unable activate keep awake/g],
-		integrations: [SENTRY_ROUTING, Sentry.hermesProfilingIntegration({})],
-
-		enabled: !__DEV__,
-	})
+interface LoadingProps {
+	text?: string
 }
+
+// eslint-disable-next-line mobx/missing-observer
+export default function Loading({ text = 'Загрузка...' }: LoadingProps) {
+	return (
+		<View style={styles.view}>
+			<ActivityIndicator />
+			<Text>{text}</Text>
+		</View>
+	)
+}
+
+const styles = StyleSheet.create({
+	view: {
+		padding: 10,
+		flexDirection: 'row',
+		alignItems: 'center',
+		alignContent: 'stretch',
+		alignSelf: 'center',
+		gap: Spacings.s2,
+	},
+})
+</file>
+
+<file path="src/components/Navigate.tsx">
+import { Theme } from '@/models/theme'
+import { SETTINGS_ROUTES, SettingsRoutes } from '@/screens/settings/navigation'
+import { StackScreenProps } from '@react-navigation/stack'
+import { observer } from 'mobx-react-lite'
+import { Divider, List } from 'react-native-paper'
+
+export const SettingsJumpNavigation = observer(
+	function SettingsJumpNavigation(props: {
+		target: keyof typeof SETTINGS_ROUTES
+		description: string
+		navigation: StackScreenProps<SettingsRoutes>
+	}) {
+		return (
+			<>
+				<List.Item
+					onPress={() => props.navigation.navigation.navigate(props.target)}
+					title={SETTINGS_ROUTES[props.target]}
+					titleStyle={Theme.fonts.titleMedium}
+					description={props.description}
+					right={props => <List.Icon {...props} icon="arrow-right" />}
+				/>
+				<Divider />
+			</>
+		)
+	},
+)
+</file>
+
+<file path="src/components/RoundedSurface.tsx">
+import { Theme } from '@/models/theme'
+import { Spacings } from '@/utils/Spacings'
+import { observer } from 'mobx-react-lite'
+import { Surface, SurfaceProps } from 'react-native-paper'
+
+export const RoundedSurface = observer(function RoundedSurface(
+	props: SurfaceProps,
+) {
+	return (
+		<Surface
+			{...props}
+			style={[
+				{
+					borderRadius: Theme.roundness * 2,
+					padding: Spacings.s2,
+					marginHorizontal: Spacings.s1,
+				},
+				props.style,
+			]}
+		/>
+	)
+})
+</file>
+
+<file path="src/components/ScrollTextCopyable.tsx">
+import { Spacings } from '@/utils/Spacings'
+import { ModalAlert } from '@/utils/Toast'
+import { observer } from 'mobx-react-lite'
+import { useCallback } from 'react'
+import { View } from 'react-native'
+import { HelperText, Text, TextProps } from 'react-native-paper'
+
+export const ScrollTextCopyable = observer(function ScrollTextCopyable(
+	props: TextProps<string>,
+) {
+	const onLongPress = useCallback(() => {
+		ModalAlert.show(
+			'Задание',
+			<View style={{ gap: Spacings.s2 }}>
+				<Text selectable>{props.children}</Text>
+
+				<HelperText type="info">
+					Подсказка: текст можно выделить и скопировать
+				</HelperText>
+			</View>,
+		)
+	}, [props.children])
+
+	return <Text onLongPress={onLongPress} {...props}></Text>
+})
+</file>
+
+<file path="src/components/SelectModal.tsx">
+import { Theme } from '@/models/theme'
+import { makeAutoObservable } from 'mobx'
+import { observer } from 'mobx-react-lite'
+import React, { useCallback, useState } from 'react'
+import {
+	ScrollView,
+	StyleProp,
+	StyleSheet,
+	TouchableOpacity,
+	View,
+	ViewStyle,
+} from 'react-native'
+import {
+	Button,
+	Chip,
+	Dialog,
+	List,
+	Portal,
+	RadioButton,
+	Text,
+} from 'react-native-paper'
+import { Spacings } from '../utils/Spacings'
+
+class Store {
+	constructor() {
+		makeAutoObservable(this, {}, { autoBind: true })
+	}
+
+	visible = false
+
+	toggleVisibility() {
+		this.visible = !this.visible
+	}
+}
+
+type Item<T extends string> = {
+	value: T
+	label: React.ReactNode
+}
+
+type Props<V extends string = string, I extends Item<V> = Item<V>> = {
+	label: string
+	value: V
+	data: readonly I[]
+	onSelect: (v: I) => void
+	mode?: 'button' | 'list.item' | 'chip'
+	inlineChip?: boolean
+	style?: StyleProp<ViewStyle>
+	description?: string
+}
+
+export default observer(function SelectModal<
+	V extends string,
+	I extends Item<V>,
+>(props: Props<V, I>) {
+	Theme.key
+	const [store] = useState(() => new Store())
+	const value =
+		props.data.find(e => e.value === props.value)?.label ?? 'Выбери...'
+
+	let label = props.label
+	if (label !== '') label += ': '
+
+	return (
+		<>
+			{props.mode === 'button' ? (
+				<Button
+					onPress={store.toggleVisibility}
+					style={[
+						{
+							borderTopLeftRadius: 0,
+							borderTopRightRadius: 0,
+							backgroundColor: Theme.colors.navigationBar,
+						},
+						props.style,
+					]}
+				>
+					<View
+						style={{
+							flexDirection: 'row',
+							padding: 0,
+							margin: 0,
+							alignItems: 'center',
+						}}
+					>
+						<Text variant="titleMedium">{label}</Text>
+						{typeof value !== 'object' ? (
+							<Text variant="titleMedium">{value}</Text>
+						) : (
+							value
+						)}
+					</View>
+				</Button>
+			) : props.mode === 'chip' ? (
+				<Chip
+					mode="flat"
+					style={props.style}
+					textStyle={props.inlineChip ? undefined : Theme.fonts.bodySmall}
+					onPress={store.toggleVisibility}
+					compact
+				>
+					{props.inlineChip ? value : (label + value).slice(0, 16)}
+				</Chip>
+			) : (
+				<List.Item
+					style={props.style}
+					title={props.label}
+					description={value}
+					onPress={store.toggleVisibility}
+				></List.Item>
+			)}
+			<Modal {...props} store={store} />
+		</>
+	)
+})
+
+const Modal = observer(function Modal(props: Props & { store: Store }) {
+	return (
+		<Portal>
+			<Dialog
+				onDismiss={props.store.toggleVisibility}
+				visible={props.store.visible}
+			>
+				<Dialog.Title style={Theme.fonts.titleMedium}>
+					{props.label}
+				</Dialog.Title>
+				<ScrollView>
+					{props.data.map(item => (
+						<Option {...props} item={item} key={item.value} />
+					))}
+				</ScrollView>
+				<Dialog.Actions>
+					<Button onPress={props.store.toggleVisibility}>Свернуть</Button>
+				</Dialog.Actions>
+			</Dialog>
+		</Portal>
+	)
+})
+
+const Option = observer(function Option<T extends string = string>(
+	props: Props<T> & {
+		item: Item<T>
+		store: Store
+	},
+) {
+	Theme.key
+	const { item, onSelect, store } = props
+	const onPress = useCallback(() => {
+		onSelect(item)
+		store.toggleVisibility()
+	}, [item, onSelect, store])
+
+	return (
+		<TouchableOpacity onPress={onPress}>
+			<View style={styles.row}>
+				<View pointerEvents="none">
+					<RadioButton
+						value="normal"
+						status={props.item.value === props.value ? 'checked' : 'unchecked'}
+					/>
+				</View>
+				{typeof props.item.label === 'object' ? (
+					props.item.label
+				) : (
+					<Text>{props.item.label}</Text>
+				)}
+			</View>
+		</TouchableOpacity>
+	)
+})
+
+const styles = StyleSheet.create({
+	container: {
+		maxHeight: 280,
+		paddingHorizontal: 0,
+	},
+	row: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: Spacings.s2,
+		paddingVertical: Spacings.s1,
+		gap: Spacings.s1,
+	},
+})
+</file>
+
+<file path="src/components/SelectTime.tsx">
+import { observer } from 'mobx-react-lite'
+import { useCallback, useState } from 'react'
+import { Button, Text } from 'react-native-paper'
+import {
+	registerTranslation,
+	ru,
+	TimePickerModal,
+} from 'react-native-paper-dates'
+registerTranslation('ru', ru)
+
+export const SelectTime = observer(function SelectTime({
+	label,
+	onSelect,
+	value: time,
+	mode = 'outlined',
+}: {
+	label: string
+	value: HoursMinutes
+	onSelect: React.Dispatch<HoursMinutes>
+	mode?:
+		| 'text'
+		| 'outlined'
+		| 'contained'
+		| 'elevated'
+		| 'contained-tonal'
+		| undefined
+}) {
+	const [visible, setVisible] = useState(false)
+	const onDismiss = useCallback(() => {
+		setVisible(false)
+	}, [setVisible])
+
+	const onConfirm = useCallback(
+		({ hours, minutes }: HoursMinutes) => {
+			setVisible(false)
+			onSelect({ hours, minutes })
+		},
+		[onSelect],
+	)
+	return (
+		<>
+			<Button onPress={() => setVisible(true)} uppercase={false} mode={mode}>
+				{label}: <RenderHoursMinutes time={time} />
+			</Button>
+			<TimePickerModal
+				visible={visible}
+				onDismiss={onDismiss}
+				locale="ru"
+				onConfirm={onConfirm}
+				hours={time.hours}
+				minutes={time.minutes}
+			/>
+		</>
+	)
+})
+
+export interface HoursMinutes {
+	hours: number
+	minutes: number
+}
+
+export const RenderHoursMinutes = observer(function RenderTime({
+	time,
+}: {
+	time: HoursMinutes
+}) {
+	return (
+		<Text style={{ fontWeight: 'bold' }}>
+			{time.hours.toString().padStart(2, '0')}:
+			{time.minutes.toString().padStart(2, '0')}
+		</Text>
+	)
+})
+</file>
+
+<file path="src/components/Size.spec.tsx">
+import { render } from '@testing-library/react-native'
+
+import { Size } from './Size'
+
+describe('<Size />', () => {
+	test('string bytes', () => {
+		expect(render(<Size t={'not a number'} />).toJSON()).toMatchInlineSnapshot(`
+<Text
+  style={
+    [
+      {
+        "textAlign": "left",
+      },
+      {
+        "color": "rgba(28, 27, 31, 1)",
+        "fontFamily": "System",
+        "fontWeight": "400",
+        "letterSpacing": 0,
+      },
+      {
+        "writingDirection": "ltr",
+      },
+      {
+        "fontWeight": "bold",
+      },
+    ]
+  }
+>
+  0.01
+  KB
+</Text>
+`)
+	})
+
+	test('object bytes', () => {
+		expect(render(<Size t={{ value: 'not a number' }} />).toJSON())
+			.toMatchInlineSnapshot(`
+<Text
+  style={
+    [
+      {
+        "textAlign": "left",
+      },
+      {
+        "color": "rgba(28, 27, 31, 1)",
+        "fontFamily": "System",
+        "fontWeight": "400",
+        "letterSpacing": 0,
+      },
+      {
+        "writingDirection": "ltr",
+      },
+      {
+        "fontWeight": "bold",
+      },
+    ]
+  }
+>
+  0.02
+  KB
+</Text>
+`)
+	})
+
+	test('undefined bytes', () => {
+		expect(render(<Size t={undefined} />).toJSON()).toMatchInlineSnapshot(
+			`"empty"`,
+		)
+	})
+
+	test('null bytes', () => {
+		expect(render(<Size t={null} />).toJSON()).toMatchInlineSnapshot(`"empty"`)
+	})
+
+	test('10 bytes', () => {
+		expect(render(<Size t={10} />).toJSON()).toMatchInlineSnapshot(`
+<Text
+  style={
+    [
+      {
+        "textAlign": "left",
+      },
+      {
+        "color": "rgba(28, 27, 31, 1)",
+        "fontFamily": "System",
+        "fontWeight": "400",
+        "letterSpacing": 0,
+      },
+      {
+        "writingDirection": "ltr",
+      },
+      {
+        "fontWeight": "bold",
+      },
+    ]
+  }
+>
+  10.00
+  B
+</Text>
+`)
+	})
+
+	test('100 bytes', () => {
+		expect(render(<Size t={100} />).toJSON()).toMatchInlineSnapshot(`
+<Text
+  style={
+    [
+      {
+        "textAlign": "left",
+      },
+      {
+        "color": "rgba(28, 27, 31, 1)",
+        "fontFamily": "System",
+        "fontWeight": "400",
+        "letterSpacing": 0,
+      },
+      {
+        "writingDirection": "ltr",
+      },
+      {
+        "fontWeight": "bold",
+      },
+    ]
+  }
+>
+  0.10
+  KB
+</Text>
+`)
+	})
+
+	test('1024 bytes', () => {
+		expect(render(<Size t={1024} />).toJSON()).toMatchInlineSnapshot(`
+<Text
+  style={
+    [
+      {
+        "textAlign": "left",
+      },
+      {
+        "color": "rgba(28, 27, 31, 1)",
+        "fontFamily": "System",
+        "fontWeight": "400",
+        "letterSpacing": 0,
+      },
+      {
+        "writingDirection": "ltr",
+      },
+      {
+        "fontWeight": "bold",
+      },
+    ]
+  }
+>
+  1.00
+  KB
+</Text>
+`)
+	})
+
+	test('1024 * 1024 * 2 bytes', () => {
+		expect(render(<Size t={1024 * 1024 * 2} />).toJSON())
+			.toMatchInlineSnapshot(`
+<Text
+  style={
+    [
+      {
+        "textAlign": "left",
+      },
+      {
+        "color": "rgba(28, 27, 31, 1)",
+        "fontFamily": "System",
+        "fontWeight": "400",
+        "letterSpacing": 0,
+      },
+      {
+        "writingDirection": "ltr",
+      },
+      {
+        "fontWeight": "bold",
+      },
+    ]
+  }
+>
+  2.00
+  MB
+</Text>
+`)
+	})
+
+	test('-10 bytes', () => {
+		expect(render(<Size t={-10} />).toJSON()).toMatchInlineSnapshot(`
+<Text
+  style={
+    [
+      {
+        "textAlign": "left",
+      },
+      {
+        "color": "rgba(28, 27, 31, 1)",
+        "fontFamily": "System",
+        "fontWeight": "400",
+        "letterSpacing": 0,
+      },
+      {
+        "writingDirection": "ltr",
+      },
+      {
+        "fontWeight": "bold",
+      },
+    ]
+  }
+>
+  -10
+  chars
+</Text>
+`)
+	})
+})
+</file>
+
+<file path="src/components/Size.tsx">
+import { Text } from 'react-native-paper'
+
+const sizes = (
+	[
+		['B', 1],
+		['KB', 1024],
+		['MB', 1024 * 1024],
+		['GB', 1024 * 1024 * 1024],
+	] as [string, number][]
+).reverse()
+
+// eslint-disable-next-line mobx/missing-observer
+export function Size({ t }: { t: unknown }) {
+	if (typeof t === 'undefined' || t === null) return 'empty'
+
+	const length =
+		typeof t === 'number'
+			? t
+			: typeof t === 'string'
+				? t.length
+				: JSON.stringify(t).length
+
+	for (const [size, chars] of sizes) {
+		if (length / chars < 0.01) continue
+		return (
+			<Text style={{ fontWeight: 'bold' }}>
+				{(length / chars).toFixed(2)}
+				{size}
+			</Text>
+		)
+	}
+
+	return <Text style={{ fontWeight: 'bold' }}>{length}chars</Text>
+}
+</file>
+
+<file path="src/components/SubjectName.tsx">
+import { StudentSettings, XSettings } from '@/models/settings'
+import { Theme } from '@/models/theme'
+import { Subject } from '@/services/net-school/entities'
+import { runInAction } from 'mobx'
+import { observer } from 'mobx-react-lite'
+import { useCallback, useState } from 'react'
+import {
+	ColorValue,
+	StyleProp,
+	StyleSheet,
+	TextStyle,
+	TouchableOpacity,
+	ViewStyle,
+} from 'react-native'
+import {
+	Button,
+	Dialog,
+	HelperText,
+	Portal,
+	Text,
+	TextInput,
+	TextProps,
+} from 'react-native-paper'
+
+type SubjectNameOptions = {
+	subjectId: number
+	offsetDayId?: string
+} & ({ subjects: Subject[] } | { subjectName: string })
+
+export function getSubjectName(from: SubjectNameOptions) {
+	const { studentId } = XSettings
+	if (!studentId) return 'Загрузка'
+
+	const studentSettings = XSettings.forStudent(studentId)
+	if (from.offsetDayId) {
+		const dayOverriden = studentSettings.subjectNamesDay[from.offsetDayId]
+
+		if (dayOverriden) return dayOverriden
+	}
+
+	return getOverridenOrOfficalName(from, studentSettings)
+}
+
+export function getOverridenOrOfficalName(
+	from: SubjectNameOptions,
+	studentSettings: StudentSettings,
+) {
+	const overriden = studentSettings.subjectNames[from.subjectId]
+	if (overriden) return overriden
+
+	return getOfficalName(from)
+}
+
+function getOfficalName(props: SubjectNameOptions) {
+	return 'subjectName' in props
+		? props.subjectName
+		: (props.subjects.find(subject => props.subjectId === subject.id)?.name ??
+				'Предмет 404')
+}
+
+type SubjectNameProps = {
+	viewStyle?: StyleProp<ViewStyle>
+	editDisabled?: boolean
+} & SubjectNameOptions &
+	Omit<
+		TextProps<string>,
+		'textAlign' | 'style' | 'selectionColor' | 'children'
+	> & {
+		style?: Omit<TextStyle, 'color'> & { color?: ColorValue }
+	}
+
+const styles = StyleSheet.create({
+	touchable: { margin: 0, padding: 0 },
+})
+
+export default observer(function SubjectName({
+	viewStyle,
+	editDisabled,
+	...props
+}: SubjectNameProps) {
+	const [isEditing, setIsEditing] = useState(false)
+	const name = getSubjectName(props)
+	const onPress = useCallback(() => setIsEditing(true), [setIsEditing])
+
+	return (
+		<TouchableOpacity
+			style={[styles.touchable, viewStyle]}
+			onPress={editDisabled ? undefined : onPress}
+		>
+			<Text {...props}>{name}</Text>
+			{isEditing && <EditSubjectName setIsEditing={setIsEditing} {...props} />}
+		</TouchableOpacity>
+	)
+})
+
+const EditSubjectName = observer(function EditSubjectName({
+	setIsEditing,
+	...props
+}: { setIsEditing: (v: boolean) => void } & SubjectNameProps) {
+	const studentSettings = XSettings.forStudentOrThrow()
+	const dayOverriden = getSubjectName(props)
+	const globalOverriden = getOverridenOrOfficalName(props, studentSettings)
+	const [name, setName] = useState('')
+	const onCancelPress = useCallback(() => {
+		setName('')
+		setIsEditing(false)
+	}, [setName, setIsEditing])
+
+	const onSavePress = useCallback(() => {
+		runInAction(() => {
+			if (name) studentSettings.subjectNames[props.subjectId] = name
+			else delete studentSettings.subjectNames[props.subjectId]
+		})
+		setIsEditing(false)
+	}, [setIsEditing, name, studentSettings.subjectNames, props.subjectId])
+
+	return (
+		<Portal>
+			<Dialog visible onDismiss={() => setIsEditing(false)}>
+				<Dialog.Title style={Theme.fonts.titleMedium}>
+					Изменить имя
+				</Dialog.Title>
+				<Dialog.Content style={{ gap: 10 }}>
+					<Text>
+						Имя в журнале:{' '}
+						<Text style={{ fontWeight: 'bold' }} selectable>
+							{getOfficalName(props)}
+						</Text>
+					</Text>
+					{dayOverriden !== globalOverriden && (
+						<>
+							<HelperText type="error">
+								Имя уже перезаписано для конкретного дня и урока, а сейчас вы
+								меняете имя глобально. Если вы хотите переименовать конкретный
+								урок в конкретный день, долго зажмите на пустое место на
+								карточке предмета
+							</HelperText>
+							<Text>Глобально: {globalOverriden}</Text>
+							<Text>Для дня: {dayOverriden}</Text>
+						</>
+					)}
+					<TextInput
+						mode="outlined"
+						defaultValue={getOverridenOrOfficalName(props, studentSettings)}
+						onChangeText={setName}
+						placeholder="Как в журнале"
+					/>
+				</Dialog.Content>
+				<Dialog.Actions>
+					<Button icon="cancel" onPress={onCancelPress} style={props.style}>
+						Отмена
+					</Button>
+					<Button
+						icon={'content-save'}
+						style={props.style}
+						onPress={onSavePress}
+					>
+						Сохранить
+					</Button>
+				</Dialog.Actions>
+			</Dialog>
+		</Portal>
+	)
+})
+</file>
+
+<file path="src/components/SwitchSetting.tsx">
+import { XSettings } from '@/models/settings'
+import { observer } from 'mobx-react-lite'
+import { useCallback } from 'react'
+import { List, ListItemProps, Switch } from 'react-native-paper'
+
+type SwitchSettingProps = Omit<ListItemProps, 'right' | 'onPress'> &
+	(
+		| {
+				setting: keyof FilterObject<typeof XSettings, true | false>
+		  }
+		| {
+				onChange(): void
+				value: boolean
+		  }
+	)
+
+export default observer(function SwitchSetting(props: SwitchSettingProps) {
+	const onChange = useCallback(() => {
+		if ('onChange' in props) {
+			props.onChange()
+		} else {
+			XSettings.save({ [props.setting]: !XSettings[props.setting] })
+		}
+	}, [props])
+
+	const value = 'setting' in props ? XSettings[props.setting] : props.value
+
+	const right = useCallback(
+		() => (
+			<Switch value={value} onChange={onChange} disabled={props.disabled} />
+		),
+		[value, onChange, props.disabled],
+	)
+
+	return <List.Item {...props} onPress={onChange} right={right} />
+})
+</file>
+
+<file path="src/components/UpdateDate.tsx">
+import { Theme } from '@/models/theme'
+import { observer } from 'mobx-react-lite'
+import { Text } from 'react-native-paper'
+import { Spacings } from '../utils/Spacings'
+
+export default observer(function UpdateDate(props: {
+	store: { updateDate: string }
+}) {
+	return (
+		<Text
+			style={{
+				color: Theme.colors.onSurfaceDisabled,
+				margin: Spacings.s2,
+				marginBottom: Spacings.s4,
+				alignSelf: 'center',
+			}}
+		>
+			{props.store.updateDate}
+		</Text>
+	)
+})
 </file>
 
 <file path="src/screens/day/edit/AddLesson.tsx">
@@ -706,1894 +1576,1156 @@ export function setLessonTimeOffset(
 }
 </file>
 
-<file path="src/screens/day/state.tsx">
-import { XSettings } from '@/models/settings'
-import { Theme } from '@/models/theme'
+<file path="src/utils/calculateMarks.test.ts">
+import { Assignment } from '@/services/net-school/entities'
+import { calculateAvg, calculateMarks, CalculateTotals } from './calculateMarks'
+
+describe('calculateMarks', () => {
+	it('should calculate empty marks', () => {
+		expect(
+			calculateMarks({
+				totals: {
+					averageMark: 5,
+					classmeetingsStats: { passed: 1, scheduled: 2 },
+					results: [],
+				},
+				markRoundAdd: -0.1,
+			}),
+		).toMatchInlineSnapshot(`
+		{
+		  "avgMark": 5,
+		  "maxWeight": -Infinity,
+		  "minWeight": Infinity,
+		  "toGetMarks": [],
+		  "totalsAndSheduledTotals": [],
+		}
+	`)
+	})
+
+	it('should calculate 1 mark', () => {
+		expect(
+			calculateMarks({
+				totals: {
+					averageMark: 5,
+					classmeetingsStats: { passed: 1, scheduled: 2 },
+					results: [mark(5, 10)],
+				},
+				targetMark: 5,
+				defaultMark: 5,
+				defaultMarkWeight: 10,
+				markRoundAdd: -0.1,
+			}),
+		).toMatchInlineSnapshot(`
+		{
+		  "avgMark": 5,
+		  "maxWeight": 10,
+		  "minWeight": 10,
+		  "toGetMarks": [],
+		  "totalsAndSheduledTotals": [
+		    {
+		      "date": "1970-01-01",
+		      "duty": false,
+		      "result": 5,
+		      "weight": 10,
+		    },
+		  ],
+		}
+	`)
+	})
+
+	it('should calculate marks', () => {
+		const totals: CalculateTotals = {
+			averageMark: 0,
+			classmeetingsStats: { passed: 1, scheduled: 15 },
+			results: [mark(4, 10), mark(5, 10), mark(2, 15)],
+		}
+
+		totals.averageMark = calculateAvg([], totals)
+
+		expect(
+			calculateMarks({
+				totals: totals,
+				targetMark: 5,
+				defaultMark: 5,
+				defaultMarkWeight: 10,
+				markRoundAdd: -0.1,
+			}),
+		).toMatchInlineSnapshot(`
+		{
+		  "avgMark": 3.43,
+		  "maxWeight": 15,
+		  "minWeight": 10,
+		  "toGetMarks": [
+		    {
+		      "amount": 11,
+		      "highest": true,
+		      "target": 5,
+		    },
+		    {
+		      "amount": 1,
+		      "highest": false,
+		      "target": 4,
+		    },
+		  ],
+		  "totalsAndSheduledTotals": [
+		    {
+		      "date": "1970-01-01",
+		      "duty": false,
+		      "result": 4,
+		      "weight": 10,
+		    },
+		    {
+		      "date": "1970-01-01",
+		      "duty": false,
+		      "result": 5,
+		      "weight": 10,
+		    },
+		    {
+		      "date": "1970-01-01",
+		      "duty": false,
+		      "result": 2,
+		      "weight": 15,
+		    },
+		  ],
+		}
+	`)
+	})
+
+	it('should calculate custom marks', () => {
+		expect(
+			calculateMarks({
+				totals: {
+					averageMark: 5,
+					classmeetingsStats: { passed: 1, scheduled: 2 },
+					results: [mark(5, 10)],
+				},
+				markRoundAdd: -0.1,
+				customMarks: [{ result: 4, weight: 10 }],
+			}),
+		).toMatchInlineSnapshot(`
+		{
+		  "avgMark": 4.5,
+		  "maxWeight": 10,
+		  "minWeight": 10,
+		  "toGetMarks": [],
+		  "totalsAndSheduledTotals": [
+		    {
+		      "date": "1970-01-01",
+		      "duty": false,
+		      "result": 5,
+		      "weight": 10,
+		    },
+		    {
+		      "result": 4,
+		      "weight": 10,
+		    },
+		  ],
+		}
+	`)
+	})
+
+	it('should calculate attendance', () => {
+		expect(
+			calculateMarks({
+				totals: {
+					averageMark: 5,
+					classmeetingsStats: { passed: 1, scheduled: 5 },
+					results: [mark(5, 10)],
+				},
+				markRoundAdd: -0.1,
+				customMarks: [{ result: 4, weight: 10 }],
+				lessonsWithoutMark: true,
+				attendance: true,
+			}),
+		).toMatchInlineSnapshot(`
+		{
+		  "avgMark": 4.5,
+		  "maxWeight": 10,
+		  "minWeight": 10,
+		  "toGetMarks": [],
+		  "totalsAndSheduledTotals": [
+		    {
+		      "date": "1970-01-01",
+		      "duty": false,
+		      "result": 5,
+		      "weight": 10,
+		    },
+		    {
+		      "result": 4,
+		      "weight": 10,
+		    },
+		    {},
+		    {},
+		    {},
+		  ],
+		}
+	`)
+	})
+})
+
+const date = new Date(0).toNetSchool()
+
+function mark(result: number, weight: number) {
+	const mark = {
+		result,
+		weight,
+		date,
+		// answerFilesCount: 0,
+		// assignmentDate: date,
+		// assignmentId: 1,
+		// assignmentName: '',
+		// assignmentTypeAbbr: '',
+		// assignmentTypeId: 0,
+		// assignmentTypeName: '',
+		// attachmentsExists: false,
+		// canAnswer: false,
+		// classAssignment: true,
+		// classmeetingId: 0,
+		// comment: '',
+		// dueDate: date,
+		duty: false,
+		// extraActivity: false,
+		// hasFileAnswers: false,
+		// hasTextAnswer: false,
+		// resultDate: date,
+		// subjectId: 0,
+		// subjectName: '',
+	} satisfies Partial<Assignment & { date: string }>
+
+	return mark as unknown as Assignment & { date: string }
+}
+</file>
+
+<file path="src/utils/calculateMarks.ts">
+import { roundMark } from '@/components/Mark'
+import type { PartialAssignment } from '@/services/net-school/entities'
+import { SubjectPerformance } from '@/services/net-school/entities'
+import { Logger } from '../constants'
+
+// TODO: Refactor and use class MarksCalculator instead of one big shitty function
+
+export type CalculateTotals = Partial<Pick<SubjectPerformance, 'attendance'>> &
+	Pick<SubjectPerformance, 'averageMark' | 'classmeetingsStats'> & {
+		results: (Omit<
+			SubjectPerformance['results'][number],
+			'classMeetingDate' | 'classMeetingId' | 'result'
+		> & {
+			result: string | number | null
+			classMeetingDate?: string
+		})[]
+	}
+
+export function calculateMarks({
+	totals,
+	lessonsWithoutMark = false,
+	customMarks = [],
+	attendance: missedLessons = true,
+	defaultMark,
+	defaultMarkWeight,
+	targetMark,
+	markRoundAdd,
+}: {
+	totals: CalculateTotals
+	attendance?: boolean
+	lessonsWithoutMark?: boolean
+	customMarks?: PartialAssignment[]
+	defaultMark?: number
+	defaultMarkWeight?: number
+	targetMark?: number
+	markRoundAdd: number
+}) {
+	try {
+		let attendance: PartialAssignment[] = []
+		if (missedLessons && totals.attendance) {
+			attendance = attendance.concat(
+				totals.attendance.map(e => {
+					return {
+						result: e.attendanceMark,
+						assignmentId: e.classMeetingDate + e.attendanceMark,
+						date: e.classMeetingDate,
+						weight: 0,
+					}
+				}),
+			)
+		}
+
+		let totalsAndSheduledTotals = [...attendance, ...totals.results].sort(
+			(a, b) =>
+				new Date(a.classMeetingDate ?? a.date ?? '').getTime() -
+				new Date(b.classMeetingDate ?? b.date ?? '').getTime(),
+		) as PartialAssignment[]
+
+		if (lessonsWithoutMark) {
+			const length =
+				totals.classmeetingsStats.passed -
+				totals.results.length -
+				attendance.length
+
+			if (length > 0)
+				attendance = new Array(length)
+					.fill({
+						result: 'Нет',
+						assignmentTypeName: 'За этот урок оценки нет',
+					})
+					.concat(attendance)
+		}
+
+		let avgMark = totals.averageMark
+
+		if (customMarks.length) {
+			totalsAndSheduledTotals = totalsAndSheduledTotals.concat(customMarks)
+			avgMark = calculateAvg(customMarks, totals)
+		}
+
+		if (lessonsWithoutMark) {
+			totalsAndSheduledTotals = totalsAndSheduledTotals.concat(
+				new Array(
+					totals.classmeetingsStats.scheduled - totalsAndSheduledTotals.length,
+				).fill({}),
+			)
+		}
+
+		const toGetMarks: ToGetMarkTargetCalculated[] = []
+		if (defaultMark && defaultMarkWeight && targetMark) {
+			calculateToGetMark(
+				avgMark,
+				markRoundAdd,
+				targetMark,
+				totals,
+				defaultMark,
+				defaultMarkWeight,
+				toGetMarks,
+				customMarks,
+			)
+			toGetMarks.sort((a, b) => b.target - a.target)
+		}
+
+		const weights = [...totals.results, ...customMarks].map(e => e.weight)
+		const maxWeight = Math.max(...weights)
+		const minWeight = Math.min(...weights)
+		return {
+			avgMark,
+			totalsAndSheduledTotals,
+			maxWeight,
+			minWeight,
+			toGetMarks,
+		}
+	} catch (e) {
+		if (!(e + '').includes('TypeError: Cannot convert null value to object'))
+			Logger.error('calcMarks', e)
+	}
+}
+
+function calculateToGetMark(
+	avgMark: number,
+	markRoundAdd: number,
+	targetMark: number,
+	totals: CalculateTotals,
+	defaultMark: number,
+	defaultMarkWeight: number,
+	toGetMarks: ToGetMarkTargetCalculated[],
+	customMarks: Partial<PartialAssignment>[],
+) {
+	const stats = totals.classmeetingsStats
+	if (stats.passed === 0 && customMarks.length === 0) return
+
+	const roundedAvg = roundMark(avgMark, markRoundAdd)
+	if (roundedAvg >= targetMark) return
+
+	const remainingLessons = stats.scheduled - stats.passed
+
+	for (let amount = 1; amount <= remainingLessons; amount++) {
+		const avg = calculateAvg(
+			new Array(amount)
+				.fill({
+					result: defaultMark,
+					weight: defaultMarkWeight,
+				} satisfies Partial<PartialAssignment>)
+				.concat(customMarks),
+			totals,
+		)
+
+		// Calculate for other possible mark targets too
+		for (let target = roundedAvg + 1; target <= targetMark; target++) {
+			if (roundMark(avg, markRoundAdd) >= target) {
+				const highest = target === targetMark
+
+				if (!toGetMarks.some(e => e.target === target)) {
+					toGetMarks.push({ target, amount, highest })
+				}
+				if (highest) return
+			}
+		}
+	}
+
+	toGetMarks.push({ target: targetMark, amount: 0, highest: true })
+}
+
+export function calculateAvg(
+	customMarks: Partial<Pick<PartialAssignment, 'weight' | 'result'>>[],
+	totals: CalculateTotals,
+) {
+	let totalWeight = 0
+	let totalMark = 0
+
+	for (const mark of [...totals.results, ...customMarks]) {
+		if (mark && mark.weight && typeof mark.result === 'number') {
+			totalWeight += mark.weight
+			totalMark += mark.weight * mark.result
+		}
+	}
+
+	return Number((totalMark / totalWeight).toFixed(2))
+}
+
+export interface ToGetMarkTargetCalculated {
+	highest: boolean
+	target: number
+	amount: number
+}
+</file>
+
+<file path="src/utils/createTheme.ts">
 import {
-	AssignmentsStore,
-	AttachmentsStore,
-	DiaryStore,
-} from '@/services/net-school/store'
-import { Spacings } from '@/utils/Spacings'
-import { autorun, makeAutoObservable } from 'mobx'
-import { View } from 'react-native'
-import { Text } from 'react-native-paper'
-import { LANG, globalStyles } from '../../constants'
-import { makeReloadPersistable } from '../../utils/makePersistable'
+	argbFromHex,
+	themeFromSourceColor,
+} from '@material/material-color-utilities'
+// import camelCase from 'camelcase'
+import Color from 'color'
+import type { MD3ElevationColors } from 'react-native-paper/lib/typescript/types'
 
-const second = 1000
-const minute = second * 60
-const hour = minute * 60
-const day = hour * 24
+type ARGBTheme = ReturnType<typeof argbThemeFromColor>
+type RGBTheme = Record<keyof ARGBTheme, string>
 
-export const DiaryState = new (class {
+type RGBColorList = {
+	primary: string
+	secondary?: string
+	tertiary?: string
+	custom?: [string, string][]
+}
+
+type CustomTheme = RGBColorList & { type: 'light' | 'dark' }
+
+const opacity = {
+	level1: 0.08,
+	level2: 0.12,
+	level3: 0.16,
+	level4: 0.38,
+}
+
+const elevationLevels = [0.05, 0.08, 0.11, 0.12, 0.14]
+
+function argbThemeFromColor(color: string, type: 'light' | 'dark' = 'light') {
+	return themeFromSourceColor(argbFromHex(color)).schemes[type].toJSON()
+}
+
+function argbThemeToRgbTheme(theme: ARGBTheme) {
+	return Object.fromEntries(
+		Object.entries(theme).map(([key, value]) => [
+			key,
+			Color(value).rgb().string(),
+		]),
+	) as RGBTheme
+}
+
+const prepareSurfaceColors = (argbTheme: ARGBTheme) => {
+	const { palettes } = themeFromSourceColor(argbTheme.primary)
+
+	const surfaceDisabled = Color(argbTheme.onSurface)
+		.alpha(opacity.level2)
+		.rgb()
+		.string()
+
+	const onSurfaceDisabled = Color(argbTheme.onSurface)
+		.alpha(opacity.level4)
+		.rgb()
+		.string()
+
+	const backdrop = Color(palettes.neutralVariant.tone(20))
+		.alpha(0.4)
+		.rgb()
+		.string()
+
+	return {
+		surfaceDisabled,
+		onSurfaceDisabled,
+		backdrop,
+	}
+}
+
+const prepareElevations = (argbTheme: ARGBTheme): MD3ElevationColors => {
+	const elevations: Partial<MD3ElevationColors> = {
+		level0: 'transparent',
+	}
+
+	const { primary, surface } = argbTheme
+
+	for (let i = 0; i < elevationLevels.length; i++) {
+		// @ts-expect-error Literal
+		elevations[`level${i + 1}`] = Color(surface)
+			.mix(Color(primary), Number(elevationLevels[i]))
+			.rgb()
+			.string()
+	}
+
+	return elevations as MD3ElevationColors
+}
+
+// function prepareCustomColors(
+// 	type: 'light' | 'dark',
+// 	custom?: [string, string][],
+// ) {
+// 	if (!custom?.length) {
+// 		return {}
+// 	}
+
+// 	const customColors: Record<string, string> = {}
+
+// 	for (const [name, value] of custom) {
+// 		if (name) {
+// 			const customColor = argbThemeToRgbTheme(argbThemeFromColor(value, type))
+// 			const camelName = camelCase(name)
+// 			const PascalName = camelCase(name, { pascalCase: true })
+
+// 			customColors[camelName] = customColor.primary
+// 			customColors[`on${PascalName}`] = customColor.onPrimary
+// 			customColors[`${camelName}Container`] = customColor.primaryContainer
+// 			customColors[`on${PascalName}Container`] = customColor.onPrimaryContainer
+// 		}
+// 	}
+
+// 	return customColors
+// }
+
+export function prepareVariant({
+	primary,
+	// secondary,
+	// tertiary,
+	type,
+}: // custom,
+CustomTheme) {
+	const baseTheme = argbThemeFromColor(primary, type)
+
+	// if (secondary) {
+	// 	const secondaryTheme = argbThemeFromColor(secondary, type)
+	// 	baseTheme.secondary = secondaryTheme.primary
+	// 	baseTheme.onSecondary = secondaryTheme.onPrimary
+	// 	baseTheme.secondaryContainer = secondaryTheme.primaryContainer
+	// 	baseTheme.onSecondaryContainer = secondaryTheme.onPrimaryContainer
+	// }
+
+	// if (tertiary) {
+	// 	const tertiaryTheme = argbThemeFromColor(tertiary, type)
+	// 	baseTheme.tertiary = tertiaryTheme.primary
+	// 	baseTheme.onTertiary = tertiaryTheme.onPrimary
+	// 	baseTheme.tertiaryContainer = tertiaryTheme.primaryContainer
+	// 	baseTheme.onTertiaryContainer = tertiaryTheme.onPrimaryContainer
+	// }
+
+	const theme = argbThemeToRgbTheme(baseTheme)
+	const elevation = prepareElevations(baseTheme)
+	const surfaceColors = prepareSurfaceColors(baseTheme)
+	// const customColors = prepareCustomColors(type, custom)
+
+	return {
+		...theme,
+		elevation,
+		...surfaceColors,
+		// ...customColors,
+	}
+}
+</file>
+
+<file path="src/utils/makePersistable.ts">
+import { PersistStoreMap, makePersistable } from 'mobx-persist-store'
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const makeReloadPersistable: typeof makePersistable = (
+	object,
+	options,
+) => {
+	// Prevent warnings while dev
+	/* istanbul ignore if */
+	if (__DEV__) {
+		for (const [key, store] of PersistStoreMap.entries()) {
+			if (store.storageName === options.name) {
+				store.stopPersisting()
+				PersistStoreMap.delete(key)
+			}
+		}
+	}
+
+	return makePersistable(object, options, {
+		delay: 200,
+		fireImmediately: false,
+	})
+}
+</file>
+
+<file path="src/utils/RequestError.ts">
+export interface RequestErrorOptions {
+	loggerIgnore?: boolean
+}
+
+export enum RequestErrorReason {
+	noConnection = 'Нет сети',
+	timeout = 'Сервер не отвечает. Медленный интернет, конец четверти или техработы',
+}
+
+export class RequestError extends Error implements RequestErrorOptions {
+	static stringify(e: object): string | RequestErrorReason {
+		let result: string
+
+		if (e instanceof Error) {
+			if (e.name === 'AbortError') {
+				result = RequestErrorReason.timeout
+			}
+		}
+
+		if (e instanceof TypeError) {
+			if (e.message.includes('Network request failed')) {
+				result = RequestErrorReason.noConnection
+			}
+		}
+
+		result ??= e + ''
+		result = result.replace(/^Error: /, '')
+
+		return result
+	}
+
+	loggerIgnore: boolean
+
+	constructor(message: string, options?: RequestErrorOptions) {
+		super(message)
+		Object.assign(this, options ?? {})
+	}
+}
+
+export function abortSignalTimeout(ms: number) {
+	const controller = new AbortController()
+
+	setTimeout(() => {
+		if (!controller.signal.aborted) controller.abort()
+	}, ms)
+
+	return controller.signal
+}
+</file>
+
+<file path="src/utils/search.ts">
+/**
+ * Compares the similarity between two strings using an n-gram comparison method. The grams default to length 2. Code by
+ * {@link https://stackoverflow.com/a/62216738/23560013 MgSam}
+ *
+ * @param str1 The first string to compare.
+ * @param str2 The second string to compare.
+ * @param gramSize The size of the grams. Defaults to length 2.
+ */
+export function stringSimilarity(str1: string, str2: string, gramSize = 2) {
+	if (!str1.length || !str2.length) {
+		return 0.0
+	}
+
+	//Order the strings by length so the order they're passed in doesn't matter
+	//and so the smaller string's ngrams are always the ones in the set
+	const s1 = str1.length < str2.length ? str1 : str2
+	const s2 = str1.length < str2.length ? str2 : str1
+
+	const pairs1 = getNGrams(s1, gramSize)
+	const pairs2 = getNGrams(s2, gramSize)
+	const set = new Set(pairs1)
+
+	const total = pairs2.length
+	let hits = 0
+	for (const item of pairs2) {
+		if (set.delete(item)) hits++
+	}
+	return hits / total
+}
+
+function getNGrams(s: string, len: number) {
+	s = ' '.repeat(len - 1) + s.toLowerCase() + ' '.repeat(len - 1)
+	const v = new Array<string>(s.length - len + 1)
+	for (let i = 0; i < v.length; i++) {
+		v[i] = s.slice(i, i + len)
+	}
+	return v
+}
+
+/**
+ * Takes a search string and an array of strings, calculates the similarity between each string in the array and the
+ * search string, and returns an array of tuples containing the original string and its similarity score, sorted in
+ * descending order of similarity score.
+ *
+ * @param search - The `search` parameter is a string that represents the search term or keyword that you want to use
+ *   for searching within the `array` of strings.
+ * @param array - An array of strings that you want to search through.
+ */
+export function inaccurateSearch(
+	search: string,
+	array: string[],
+): [string, number][] {
+	return array
+		.map((element): [string, number] => [
+			element,
+			stringSimilarity(search, element),
+		])
+		.sort((a, b) => b[1] - a[1])
+}
+</file>
+
+<file path="src/utils/setInAction.ts">
+import { Logger } from '@/constants'
+import { isObservable, runInAction } from 'mobx'
+
+export function setInAction<T extends object>(
+	store: T,
+	assignment: Partial<T>,
+) {
+	if (!isObservable(store)) Logger.warn(new Error('Non-observable object!'))
+
+	runInAction(() => {
+		for (const [key, value] of Object.entries(assignment)) {
+			// @ts-expect-error uhhh idk
+			store[key] = value
+		}
+	})
+}
+</file>
+
+<file path="src/utils/Spacings.ts">
+export const Spacings = {
+	s1: 4,
+	s2: 8,
+	s3: 16,
+	s4: 24,
+	s5: 28,
+} as const
+</file>
+
+<file path="src/utils/Toast.ts">
+import { makeAutoObservable, observable } from 'mobx'
+import React from 'react'
+
+interface BaseProps {
+	title: string
+	body?: React.ReactNode
+	error?: boolean
+}
+
+interface ModalProps extends BaseProps {
+	buttons?: ModalButton[]
+}
+
+interface ModalButton {
+	label: React.ReactNode
+	callback: VoidFunction
+}
+
+interface ToastProps extends BaseProps {
+	timeout?: number
+}
+
+export const Toast = new (class {
 	constructor() {
-		makeAutoObservable<this, 'weekOffset'>(this, {
-			weekOffset: false,
-		})
-		makeReloadPersistable(this, {
-			name: 'diary',
-			properties: ['showHomework', 'showAttachments', 'showLessonTheme'],
-		})
+		makeAutoObservable<this, 'timeout'>(
+			this,
+			{ timeout: false },
+			{ autoBind: true },
+		)
 	}
 
-	day = new Date().toYYYYMMDD()
-	week = new Date()
+	private timeout: ReturnType<typeof setTimeout>
 
-	showHomework = true
-	showAttachments = true
-	showLessonTheme = true
+	state: ToastProps | null = null
 
-	edit = false
+	show({ title, body, error, timeout = 7000 }: ToastProps) {
+		this.state = { title, body, error }
+		if (this.timeout) clearTimeout(this.timeout)
+		this.timeout = setTimeout(this.hide, timeout)
+	}
 
-	get weekDays() {
-		return Date.week(this.week)
-	}
-	private weekOffset(daysOffset: number) {
-		return new Date(this.week.getTime() + daysOffset * day)
-	}
-	get weekBefore() {
-		return this.weekOffset(-7)
-	}
-	get weekAfter() {
-		return this.weekOffset(7)
-	}
-	get weekDaysDropdown() {
-		const today = new Date()
-		const todayWeek = Date.week(today)
-		const todayString = today.toYYYYMMDD()
-		return [
-			this.weekDays[0].toYYYYMMDD() === todayWeek[0].toYYYYMMDD()
-				? null
-				: {
-						label: <DayRenderer day={today} i={0} />,
-						value: todayString + '$TODAY', // Just so no same warning keys warning is thrown
-						week: todayWeek[0],
-					},
-			weekValue('Прошлая неделя', this.weekBefore),
-			...this.weekDays.map((day, i) => ({
-				label: <DayRenderer day={day} i={i} />,
-				value: day.toYYYYMMDD(),
-			})),
-			weekValue('Следующая неделя', this.weekAfter),
-		].filter(e => !!e)
+	hide() {
+		this.state = null
 	}
 })()
 
-autorun(() => {
-	const { studentId } = XSettings
-	const { showHomework, weekDays } = DiaryState
-
-	DiaryStore.withParams({
-		studentId,
-		startDate: weekDays[0].toNetSchool(),
-		endDate: weekDays[6].toNetSchool(),
-	})
-
-	AssignmentsStore.withParams({
-		studentId,
-		classmeetingsIds: showHomework
-			? DiaryStore.result?.lessons.map(e => e.classmeetingId)
-			: undefined,
-	})
-
-	const withAttachments = AssignmentsStore.result
-		?.filter(e => e.attachmentsExists)
-		.map(e => e.assignmentId)
-
-	AttachmentsStore.withParams({
-		studentId,
-		assignmentIds: withAttachments?.length ? withAttachments : undefined,
-	})
-})
-
-function weekValue(text: string, week: Date) {
-	const day = Date.week(week)[0].toYYYYMMDD()
-	return {
-		label: `${text} (${day})`,
-		value: day,
-		week: week,
+export const ModalAlert = new (class {
+	constructor() {
+		makeAutoObservable(this, { state: observable.shallow }, { autoBind: true })
 	}
-}
 
-// eslint-disable-next-line mobx/missing-observer
-function DayRenderer({ day, i }: { day: Date; i: number }) {
-	const today = new Date().toYYYYMMDD() === day.toYYYYMMDD()
-	const dayName = LANG.days[i]
-	return today ? (
-		<Text style={{ fontWeight: 'bold', color: Theme.colors.primary }}>
-			{dayName}, cегодня
-		</Text>
-	) : (
+	state: ModalProps | null = null
+
+	show(
+		title: string,
+		body?: React.ReactNode,
+		error?: boolean,
+		buttons: ModalButton[] = [],
+	) {
+		this.state = { title, body, error, buttons }
+	}
+
+	close() {
+		this.state = null
+	}
+})()
+</file>
+
+<file path="src/utils/useStyles.ts">
+import { Theme, ThemeStore } from '@/models/theme'
+import React, { useMemo } from 'react'
+import { StyleProp, ViewStyle } from 'react-native'
+
+export function useStyles<T extends ViewStyle = ViewStyle>(
+	callback: (theme: ThemeStore) => StyleProp<T>,
+	deps?: React.DependencyList,
+) {
+	const styles = useMemo(
+		() => {
+			return callback(Theme)
+		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		deps ? [callback, Theme.key, ...deps] : [callback, Theme.key],
+	)
+
+	return styles
+}
+</file>
+
+<file path="src/components/ChipLike.tsx">
+import { Theme } from '@/models/theme'
+import { Spacings } from '@/utils/Spacings'
+import { observer } from 'mobx-react-lite'
+import { View, ViewStyle } from 'react-native'
+import { Text } from 'react-native-paper'
+
+export const ChipLike = observer(function ChipLike({
+	children,
+  style
+}: {
+	children: React.ReactNode,
+  style?: ViewStyle,
+}) {
+	return (
 		<View
-			style={[
-				{
-					margin: Spacings.s1,
-					width: '90%',
-					flex: 1,
-				},
-				globalStyles.stretch,
-			]}
+			style={[{
+				backgroundColor: Theme.colors.secondaryContainer,
+				borderRadius: Theme.roundness,
+				padding: Spacings.s1 / 2,
+			}, style]}
 		>
-			<Text style={{ fontWeight: 'bold' }}>{dayName}</Text>
-			<Text>
-				{'  '}
-				{day.toYYYYMMDD()}
+			<Text
+				style={{
+					color: Theme.colors.onSecondaryContainer,
+					fontWeight: 'bold',
+				}}
+			>
+				{children}
 			</Text>
 		</View>
 	)
-}
-
-export const DAY_NAMES_SHORT = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
+})
 </file>
 
-<file path="src/screens/login/out.tsx">
-import Header from '@/components/Header'
-import { Theme } from '@/models/theme'
-import { API } from '@/services/net-school/api'
-import { ModalAlert } from '@/utils/Toast'
-import { useStyles } from '@/utils/useStyles'
-import { runInAction } from 'mobx'
-import { observer } from 'mobx-react-lite'
-import { StyleSheet, View } from 'react-native'
-import { Button, Text } from 'react-native-paper'
-import { Spacings } from '../../utils/Spacings'
-
-function logOut() {
-	ModalAlert.close()
-	runInAction(() => API.logOut())
-}
-
-function ensureLogin() {
-	ModalAlert.show(
-		'Вы уверены?',
-		<Text>
-			Если вы выйдете, то ваши логин и пароль будут удалены, и вы не сможете
-			входить автоматически. Также, вы не сможете получать уведомления.
-		</Text>,
-		true,
-		[{ label: 'Выйти', callback: logOut }],
-	)
-}
-
-export const LogoutButton = observer(function LogoutButton() {
-	return (
-		<Button onPress={ensureLogin} {...Theme.destructiveButton}>
-			Выйти
-		</Button>
-	)
-})
-
-export default observer(function LogoutScreen() {
-	const viewStyle = useStyles(() => ({
-		flex: 1,
-		backgroundColor: Theme.colors.background,
-	}))
-
-	return (
-		<View style={viewStyle}>
-			<Header title="Выход"></Header>
-			<View style={styles.container}>
-				<LogoutButton />
-			</View>
-		</View>
-	)
-})
+<file path="src/components/Chips.tsx">
+import { Spacings } from '@/utils/Spacings'
+import React from 'react'
+import { ScrollView, StyleProp, StyleSheet, ViewStyle } from 'react-native'
 
 const styles = StyleSheet.create({
-	subtitle: { alignSelf: 'center', marginTop: Spacings.s2 },
-	container: { alignContent: 'center', padding: Spacings.s3 },
-})
-</file>
-
-<file path="src/screens/settings/support/PrivacyPolicy.tsx">
-import { AnchorHTMLAttributes, memo } from 'react'
-import { Linking, ScrollView, View } from 'react-native'
-import { Text, TextProps } from 'react-native-paper'
-
-// eslint-disable-next-line mobx/missing-observer
-export function Strong(props: TextProps<string>) {
-	return (
-		<Text
-			{...props}
-			style={{
-				fontWeight: 'bold',
-				fontSize: 20,
-			}}
-		></Text>
-	)
-}
-
-// eslint-disable-next-line mobx/missing-observer
-export function Link(
-	props: TextProps<string> & AnchorHTMLAttributes<never> & { href: string },
-) {
-	return (
-		<Text
-			{...props}
-			onPress={() => {
-				Linking.openURL(props.href)
-			}}
-		></Text>
-	)
-}
-
-// eslint-disable-next-line mobx/missing-observer
-export default memo(function PrivacyPolicy() {
-	return (
-		<ScrollView contentContainerStyle={{ padding: 7 }}>
-			<View>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Privacy Policy</Strong>
-				<Text>
-					Leaftail1880 built the Udnevka app as an Open Source app. This
-					SERVICE is provided by Leaftail1880 at no cost and is intended for use
-					as is.
-				</Text>
-				<Text>
-					This page is used to inform visitors regarding my policies with the
-					collection, use, and disclosure of Personal Information if anyone
-					decided to use my Service.
-				</Text>
-				<Text>
-					If you choose to use my Service, then you agree to the collection and
-					use of information in relation to this policy. The Personal
-					Information that I collect is used for providing and improving the
-					Service. I will not use or share your information with anyone except
-					as described in this Privacy Policy.
-				</Text>
-				<Text>
-					The terms used in this Privacy Policy have the same meanings as in our
-					Terms and Conditions, which are accessible at Udnevka unless
-					otherwise defined in this Privacy Policy.
-				</Text>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Information Collection and Use</Strong>
-				<Text>
-					For a better experience, while using our Service, I may require you to
-					provide us with certain personally identifiable information, including
-					but not limited to IP, device name, device OS, device API version..
-					The information that I request will be retained on your device and is
-					not collected by me in any way.
-				</Text>
-				<View>
-					<Text>
-						The app does use third-party services that may collect information
-						used to identify you.
-					</Text>
-					<Text>
-						Link to the privacy policy of third-party service providers used by
-						the app
-					</Text>
-					<Link
-						href="https://expo.io/privacy"
-						target="_blank"
-						rel="noopener noreferrer"
-						// eslint-disable-next-line react-native/no-raw-text
-					>
-						Expo
-					</Link>
-					<Link
-						href="https://sentry.io/privacy/"
-						target="_blank"
-						rel="noopener noreferrer"
-						// eslint-disable-next-line react-native/no-raw-text
-					>
-						Sentry
-					</Link>
-				</View>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Log Data</Strong>
-				<Text>
-					I want to inform you that whenever you use my Service, in a case of an
-					error in the app I collect data and information (through third-party
-					products) on your phone called Log Data. This Log Data may include
-					information such as your device Internet Protocol (“IP”) address,
-					device name, operating system version, the configuration of the app
-					when utilizing my Service, the time and date of your use of the
-					Service, and other statistics.
-				</Text>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Cookies</Strong>
-				<Text>
-					Cookies are files with a small amount of data that are commonly used
-					as anonymous unique identifiers. These are sent to your browser from
-					the websites that you visit and are stored on your device’s internal
-					memory.
-				</Text>
-				<Text>
-					This Service does not use these “cookies” explicitly. However, the app
-					may use third-party code and libraries that use “cookies” to collect
-					information and improve their services. You have the option to either
-					accept or refuse these cookies and know when a cookie is being sent to
-					your device. If you choose to refuse our cookies, you may not be able
-					to use some portions of this Service.
-				</Text>
-				<Text>
-					<Strong>Service Providers</Strong>
-				</Text>
-				<Text>
-					I may employ third-party companies and individuals due to the
-					following reasons:
-				</Text>
-				<Text>To facilitate our Service;</Text>
-				<Text>To provide the Service on our behalf;</Text>
-				<Text>To perform Service-related services; or</Text>
-				<Text>To assist us in analyzing how our Service is used.</Text>
-				<Text>
-					I want to inform users of this Service that these third parties have
-					access to their Personal Information. The reason is to perform the
-					tasks assigned to them on our behalf. However, they are obligated not
-					to disclose or use the information for any other purpose.
-				</Text>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Security</Strong>
-				<Text>
-					I value your trust in providing us your Personal Information, thus we
-					are striving to use commercially acceptable means of protecting it.
-					But remember that no method of transmission over the internet, or
-					method of electronic storage is 100% secure and reliable, and I cannot
-					guarantee its absolute security.
-				</Text>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Links to Other Sites</Strong>
-				<Text>
-					This Service may contain links to other sites. If you click on a
-					third-party link, you will be directed to that site. Note that these
-					external sites are not operated by me. Therefore, I strongly advise
-					you to review the Privacy Policy of these websites. I have no control
-					over and assume no responsibility for the content, privacy policies,
-					or practices of any third-party sites or services.
-				</Text>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Children’s Privacy</Strong>
-				<View>
-					<Text>
-						These Services do not address anyone under the age of 13. I do not
-						knowingly collect personally identifiable information from children
-						under 13 years of age. In the case I discover that a child under 13
-						has provided me with personal information, I immediately delete this
-						from our servers. If you are a parent or guardian and you are aware
-						that your child has provided us with personal information, please
-						contact me so that I will be able to do the necessary actions.
-					</Text>
-				</View>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Changes to This Privacy Policy</Strong>
-				<Text>
-					I may update our Privacy Policy from time to time. Thus, you are
-					advised to review this page periodically for any changes. I will
-					notify you of any changes by posting the new Privacy Policy on this
-					page.
-				</Text>
-				<Text>This policy is effective as of 2024-02-01</Text>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Contact Us</Strong>
-				<Text>
-					If you have any questions or suggestions about my Privacy Policy, do
-					not hesitate to contact me at leaftail1880@outlook.com.
-				</Text>
-				<Text>
-					This privacy policy page was created at{' '}
-					<Link
-						href="https://privacypolicytemplate.net"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						privacypolicytemplate.net
-					</Link>{' '}
-					and modified/generated by{' '}
-					<Link
-						href="https://app-privacy-policy-generator.nisrulz.com/"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						App Privacy Policy Generator
-					</Link>
-				</Text>
-			</View>
-		</ScrollView>
-	)
-})
-</file>
-
-<file path="src/screens/settings/support/Support.tsx">
-import { SettingsJumpNavigation } from '@/components/Navigate'
-import { StackScreenProps } from '@react-navigation/stack'
-import * as Application from 'expo-application'
-import { useState } from 'react'
-import { Linking, ScrollView, View } from 'react-native'
-import { Button, Divider, List, Text } from 'react-native-paper'
-import WebView from 'react-native-webview'
-import { Spacings } from '../../../utils/Spacings'
-import { SettingsRoutes } from '../navigation'
-
-// eslint-disable-next-line mobx/missing-observer
-export default function About(props: StackScreenProps<SettingsRoutes>) {
-	const [dino, setDino] = useState(false)
-
-	return (
-		<ScrollView>
-			<SettingsJumpNavigation
-				navigation={props}
-				target={'privacy'}
-				description={''}
-			/>
-			<SettingsJumpNavigation
-				navigation={props}
-				target={'terms'}
-				description={''}
-			/>
-
-			<List.Item
-				onPress={() => {
-					Linking.openURL('https://leaftail1880.github.io/udnevka')
-				}}
-				title="Официальный сайт"
-				left={props => <List.Icon {...props} icon="web" />}
-			/>
-			<Divider />
-
-			<List.Item
-				onPress={() => {
-					Linking.openURL('https://t.me/udnevkaoffical')
-				}}
-				title="Новости приложения"
-				left={props => <List.Icon {...props} icon="send" />}
-			/>
-			<Divider />
-
-			<List.Item
-				onPress={() => {
-					Linking.openURL('https://t.me/udnevkasupport')
-				}}
-				title="Тех. поддержка"
-				left={props => <List.Icon {...props} icon="send" />}
-			/>
-			<Divider />
-			<List.Item
-				onPress={() => {
-					Linking.openURL('https://github.com/leaftail1880/udnevka')
-				}}
-				left={props => <List.Icon {...props} icon="github" />}
-				title="Исходный код на GitHub"
-			/>
-			<Divider />
-
-			<View style={{ padding: Spacings.s2 }}>
-				<Text>Название: {Application.applicationName}</Text>
-				<Text>Версия: {Application.nativeApplicationVersion}</Text>
-				<Text>Идентификатор: {Application.applicationId}</Text>
-				<Text>Сделано с ❤️ Leaftail и Milk_Cool</Text>
-				<Button onPress={() => setDino(!dino)}>Show Google Dino</Button>
-			</View>
-			{dino && (
-				<View style={{ marginBottom: Spacings.s5 }}>
-					<WebView
-						source={{ uri: 'https://chromedino.com/' }}
-						style={{ width: '100%', height: 600 }}
-					></WebView>
-				</View>
-			)}
-		</ScrollView>
-	)
-}
-</file>
-
-<file path="src/screens/settings/support/TermsAndConditions.tsx">
-import { memo } from 'react'
-import { ScrollView, View } from 'react-native'
-import { Text } from 'react-native-paper'
-import { Link, Strong } from './PrivacyPolicy'
-
-// eslint-disable-next-line mobx/missing-observer
-export default memo(function TermsAndConditions() {
-	return (
-		<ScrollView contentContainerStyle={{ padding: 7 }}>
-			<View>
-				{/* eslint-disable-next-line react-native/no-raw-text */}
-				<Strong>Terms &amp; Conditions</Strong>
-				<Text>
-					By downloading or using the app, these terms will automatically apply
-					to you – you should make sure therefore that you read them carefully
-					before using the app. You’re not allowed to copy or modify the app,
-					any part of the app, or our trademarks in any way. You’re not allowed
-					to attempt to extract the source code of the app, and you also
-					shouldn’t try to translate the app into other languages or make
-					derivative versions. The app itself, and all the trademarks,
-					copyright, database rights, and other intellectual property rights
-					related to it, still belong to Leaftail1880.
-				</Text>
-				<Text>
-					Leaftail1880 is committed to ensuring that the app is as useful and
-					efficient as possible. For that reason, we reserve the right to make
-					changes to the app or to charge for its services, at any time and for
-					any reason. We will never charge you for the app or its services
-					without making it very clear to you exactly what you’re paying for.
-				</Text>
-				<Text>
-					The Udnevka app stores and processes personal data that you have
-					provided to us, to provide my Service. It’s your responsibility to
-					keep your phone and access to the app secure. We therefore recommend
-					that you do not jailbreak or root your phone, which is the process of
-					removing software restrictions and limitations imposed by the official
-					operating system of your device. It could make your phone vulnerable
-					to malware/viruses/malicious programs, compromise your phone’s
-					security features and it could mean that the Udnevka app won’t work
-					properly or at all.
-				</Text>
-				<View>
-					<Text>
-						The app does use third-party services that declare their Terms and
-						Conditions.
-					</Text>
-					<Text>
-						Link to Terms and Conditions of third-party service providers used
-						by the app
-					</Text>
-					<Link
-						href="https://expo.io/terms"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						<Text>Expo</Text>
-					</Link>
-					<Link
-						href="https://sentry.io/terms/"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						<Text>Sentry</Text>
-					</Link>
-				</View>
-				<Text>
-					You should be aware that there are certain things that Leaftail1880
-					will not take responsibility for. Certain functions of the app will
-					require the app to have an active internet connection. The connection
-					can be Wi-Fi or provided by your mobile network provider, but
-					Leaftail1880 cannot take responsibility for the app not working at
-					full functionality if you don’t have access to Wi-Fi, and you don’t
-					have any of your data allowance left.
-				</Text>
-				<Text>
-					If you’re using the app outside of an area with Wi-Fi, you should
-					remember that the terms of the agreement with your mobile network
-					provider will still apply. As a result, you may be charged by your
-					mobile provider for the cost of data for the duration of the
-					connection while accessing the app, or other third-party charges. In
-					using the app, you’re accepting responsibility for any such charges,
-					including roaming data charges if you use the app outside of your home
-					territory (i.e. region or country) without turning off data roaming.
-					If you are not the bill payer for the device on which you’re using the
-					app, please be aware that we assume that you have received permission
-					from the bill payer for using the app.
-				</Text>
-				<Text>
-					Along the same lines, Leaftail1880 cannot always take responsibility
-					for the way you use the app i.e. You need to make sure that your
-					device stays charged – if it runs out of battery and you can’t turn it
-					on to avail the Service, Leaftail1880 cannot accept responsibility.
-				</Text>
-				<Text>
-					With respect to Leaftail1880’s responsibility for your use of the app,
-					when you’re using the app, it’s important to bear in mind that
-					although we endeavor to ensure that it is updated and correct at all
-					times, we do rely on third parties to provide information to us so
-					that we can make it available to you. Leaftail1880 accepts no
-					liability for any loss, direct or indirect, you experience as a result
-					of relying wholly on this functionality of the app.
-				</Text>
-				<Text>
-					At some point, we may wish to update the app. The app is currently
-					available on Android &amp; iOS – the requirements for the both systems
-					(and for any additional systems we decide to extend the availability
-					of the app to) may change, and you’ll need to download the updates if
-					you want to keep using the app. Leaftail1880 does not promise that it
-					will always update the app so that it is relevant to you and/or works
-					with the Android &amp; iOS version that you have installed on your
-					device. However, you promise to always accept updates to the
-					application when offered to you, We may also wish to stop providing
-					the app, and may terminate use of it at any time without giving notice
-					of termination to you. Unless we tell you otherwise, upon any
-					termination, (a) the rights and licenses granted to you in these terms
-					will end; (b) you must stop using the app, and (if needed) delete it
-					from your device.
-				</Text>
-				<Text>
-					<Strong>Changes to This Terms and Conditions</Strong>
-				</Text>
-				<Text>
-					I may update our Terms and Conditions from time to time. Thus, you are
-					advised to review this page periodically for any changes. I will
-					notify you of any changes by posting the new Terms and Conditions on
-					this page.
-				</Text>
-				<Text>These terms and conditions are effective as of 2024-02-01</Text>
-				<Text>
-					<Strong>Contact Us</Strong>
-				</Text>
-				<Text>
-					If you have any questions or suggestions about my Terms and
-					Conditions, do not hesitate to contact me at leaftail1880@outlook.com.
-				</Text>
-				<Text>
-					This Terms and Conditions page was generated by{' '}
-					<Link
-						href="https://app-privacy-policy-generator.nisrulz.com/"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						App Privacy Policy Generator
-					</Link>
-				</Text>
-			</View>
-		</ScrollView>
-	)
-})
-</file>
-
-<file path="src/screens/settings/update/Chips.tsx">
-import { Theme } from '@/models/theme'
-import { observer } from 'mobx-react-lite'
-import { memo, useCallback } from 'react'
-import { StyleSheet, View } from 'react-native'
-import { Badge, Chip } from 'react-native-paper'
-import { ModalAlert } from '../../../utils/Toast'
-
-// eslint-disable-next-line mobx/missing-observer
-export const BetaChip = memo(function BetaChip() {
-	return (
-		<Chip compact onPress={betaChipWarning}>
-			Бета
-		</Chip>
-	)
+	style: { padding: Spacings.s2 },
+	contentContainerStyle: { gap: Spacings.s2 },
 })
 
-const betaChipWarning = () =>
-	ModalAlert.show(
-		'Бета версия',
-		'Эта версия приложения может работать нестабильно, но содержит новые функции. Пробуйте на свой страх и риск.',
-	)
-
 // eslint-disable-next-line mobx/missing-observer
-export const FilesizeChip = memo(function FilesizeChip({
-	size,
-}: {
-	size: number | undefined
+export function Chips(props: {
+	children: React.ReactNode
+	style?: StyleProp<ViewStyle>
 }) {
-	const onPress = useCallback(
-		() =>
-			ModalAlert.show(
-				size ? 'Вес файла' : 'Файла нет',
-				size
-					? 'Показывает, сколько весит .APK или .IPA файл. Не является тем же весом, что вы получите после установки.'
-					: 'После публикации обновления нужно время, чтобы оно было собрано и запакованно в файл. Сборка обычно занимает 6-7 минут. Наберитесь терпения, скоро он появится!',
-			),
-		[size],
+	if (
+		Array.isArray(props.children) &&
+		props.children.filter(Boolean).length === 0
 	)
+		return
 
 	return (
-		<Chip onPress={onPress} compact>
-			{size ? `${(size / 1024 / 1024).toFixed(2)}мб` : 'Файла нет'}
-		</Chip>
-	)
-})
-
-export const NewVersionChip = observer(function NewVersionChip() {
-	return (
-		<Chip
-			style={{
-				backgroundColor: Theme.colors.errorContainer,
-			}}
-			onPress={newVersionChipModal}
-			compact
+		<ScrollView
+			style={[styles.style, props.style]}
+			contentContainerStyle={styles.contentContainerStyle}
+			showsHorizontalScrollIndicator={false}
+			fadingEdgeLength={{ end: 20, start: 10 }}
+			horizontal
 		>
-			Новая версия
-			<View>
-				<Badge style={styles.badge} size={6} />
-			</View>
-		</Chip>
+			{props.children}
+		</ScrollView>
 	)
-})
-
-const newVersionChipModal = () =>
-	ModalAlert.show(
-		'Новая версия!',
-		'Обновитесь скорее, чтобы получить новые функции и фиксы багов!',
-	)
-
-const styles = StyleSheet.create({
-	badge: {
-		position: 'relative',
-		top: -8,
-		right: -2,
-	},
-})
+}
 </file>
 
-<file path="src/screens/settings/update/Release.tsx">
-import { Logger } from '@/constants'
-import { GithubRelease } from '@/services/github/entities'
-import * as Application from 'expo-application'
-import * as FileSystem from 'expo-file-system'
-import { runInAction } from 'mobx'
+<file path="src/components/Modal.tsx">
+import { Theme } from '@/models/theme'
+import { Spacings } from '@/utils/Spacings'
 import { observer } from 'mobx-react-lite'
-import { memo } from 'react'
-import { ListRenderItemInfo, StyleSheet, View } from 'react-native'
-import { Button, Card, HelperText, ProgressBar } from 'react-native-paper'
-import { Spacings } from '../../../utils/Spacings'
-import { BetaChip, FilesizeChip, NewVersionChip } from './Chips'
-import ReleaseBody from './ReleaseBody'
-import Warnings from './Warnings'
-import State from './state'
-import { Filename, downloadUpdate } from './utils'
+import { View } from 'react-native'
+import { Button, Dialog, Portal, Text } from 'react-native-paper'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ModalAlert, Toast } from '../utils/Toast'
 
-export default observer<ListRenderItemInfo<GithubRelease>>(
-	function Release(props) {
-		if (props.item.name === Application.nativeApplicationVersion) {
-			State.currentI = props.index
-		}
+// eslint-disable-next-line mobx/missing-observer
+export default function ModalProvider() {
+	return (
+		<>
+			<ToastModal />
+			<DialogModal />
+		</>
+	)
+}
 
-		const size = props.item.assets.find(e => e.name === Filename)?.size
-		return (
-			<Card style={{ margin: Spacings.s2 }}>
-				<Card.Title title={props.item.name} titleVariant="headlineMedium" />
-				<Card.Content style={{ marginBottom: Spacings.s2 }}>
-					<View
-						style={{
-							flexDirection: 'row',
-							flex: 1,
-							gap: Spacings.s2,
-							flexWrap: 'wrap',
-						}}
-					>
-						{props.item.prerelease && <BetaChip />}
-						<FilesizeChip size={size} />
-						{State.currentI > props.index && <NewVersionChip />}
-						<Warnings version={props.item.name} />
-					</View>
-				</Card.Content>
-				<Card.Content>
-					<ReleaseBody body={props.item.body} />
-				</Card.Content>
-				<ReleaseActions release={props.item} i={props.index} />
-			</Card>
+const ToastModal = observer(function ToastModal() {
+	const insets = useSafeAreaInsets()
+	return (
+		Toast.state && (
+			<View
+				onTouchStart={Toast.hide}
+				style={{
+					position: 'absolute',
+					bottom: insets.bottom + 80,
+					width: '100%',
+					margin: 0,
+					backgroundColor: Toast.state.error
+						? Theme.colors.errorContainer
+						: Theme.colors.elevation.level5,
+					justifyContent: 'center',
+					alignContent: 'center',
+					padding: Spacings.s1 / 2,
+				}}
+			>
+				<Text style={[Theme.fonts.titleSmall, {}]}>
+					{Toast.state.title + ': '}
+					{Toast.state.body && (
+						<Text style={[Theme.fonts.bodySmall, {}]}>{Toast.state.body}</Text>
+					)}
+				</Text>
+			</View>
 		)
-	},
-)
+	)
+})
+
+const DialogModal = observer(function DialogModal() {
+	return (
+		<Portal>
+			{ModalAlert.state && (
+				<Dialog
+					visible
+					dismissable
+					onDismiss={ModalAlert.close}
+					style={{
+						backgroundColor: ModalAlert.state.error
+							? Theme.colors.errorContainer
+							: Theme.colors.elevation.level3,
+					}}
+				>
+					<Dialog.Title style={Theme.fonts.titleMedium}>
+						{ModalAlert.state.title}
+					</Dialog.Title>
+					{ModalAlert.state.body && (
+						<Dialog.Content>
+							{typeof ModalAlert.state.body === 'object' ? (
+								ModalAlert.state.body
+							) : (
+								<Text>{ModalAlert.state.body}</Text>
+							)}
+						</Dialog.Content>
+					)}
+					<Actions />
+				</Dialog>
+			)}
+		</Portal>
+	)
+})
+
+const Actions = observer(function Actions() {
+	if (!ModalAlert.state) return
+
+	const labelStyle = ModalAlert.state.error && {
+		color: Theme.colors.onErrorContainer,
+	}
+
+	return (
+		<Dialog.Actions style={{ flexWrap: 'wrap' }}>
+			{ModalAlert.state.buttons?.map((e, i) => (
+				<Button onPress={e.callback} key={i.toString()} labelStyle={labelStyle}>
+					{e.label}
+				</Button>
+			))}
+			<Button onPress={ModalAlert.close} labelStyle={labelStyle}>
+				Закрыть
+			</Button>
+		</Dialog.Actions>
+	)
+})
+</file>
+
+<file path="src/components/NumberInput.tsx">
+import { runInAction } from 'mobx'
+import React, { useState } from 'react'
+import { StyleSheet, View } from 'react-native'
+import { Button, HelperText, IconButton, TextInput } from 'react-native-paper'
+import { Spacings } from '../utils/Spacings'
+
+interface NumberInputSettingProps<T extends number | undefined = number> {
+	value: T
+	defaultValue?: T
+	onChange: (value: T) => void
+	label: string
+	description?: string
+}
 
 // eslint-disable-next-line mobx/missing-observer
-const AlreadyInstalled = memo(function AlreadyInstalled() {
-	return (
-		<Button disabled mode="contained-tonal">
-			Сейчас установлена
-		</Button>
+export default function NumberInputSetting<
+	T extends number | undefined = number,
+>(props: NumberInputSettingProps<T>) {
+	const [error, setError] = useState(false)
+	const [value, setValue] = useState<string | undefined>(
+		props.value?.toString(),
 	)
-})
-
-const InstallOrDownload = observer(function InstallOrDownload(props: {
-	release: GithubRelease
-	i: number
-	downloaded: boolean
-}) {
-	return (
-		<Button
-			mode="contained-tonal"
-			onPress={() => downloadUpdate(props.i, props.release, props.downloaded)}
-		>
-			{props.downloaded ? 'Установить' : 'Скачать'}
-		</Button>
-	)
-})
-
-const ReleaseActions = observer(function ReleaseActions(props: {
-	release: GithubRelease
-	i: number
-}) {
-	const installed = props.release.name === Application.nativeApplicationVersion
-	const downloading = State.progress?.i === props.i
-	const downloaded = State.files.find(e => e.version === props.release.name)
-	const progress = State.progress
 
 	return (
 		<>
-			<Card.Content>
-				{typeof progress?.bar !== 'undefined' && downloading && (
-					<ProgressBar
-						progress={progress.bar}
-						style={{ marginTop: Spacings.s2 }}
+			<View style={styles.view}>
+				<TextInput
+					keyboardType="numeric"
+					label={props.label}
+					mode="outlined"
+					value={value}
+					error={error}
+					onChangeText={setValue}
+					onBlur={() => {
+						runInAction(() => {
+							if (typeof value === 'undefined' || value === '') {
+								if (typeof props.defaultValue === 'undefined') {
+									setError(false)
+									setValue(value)
+									return props.onChange(value as T)
+								} else return setError(true)
+							}
+
+							const num = parseInt(value)
+							if (isNaN(num)) {
+								setError(true)
+							} else {
+								setError(false)
+								setValue(num + '')
+								props.onChange(num as T)
+							}
+						})
+					}}
+					style={styles.textInput}
+				/>
+				<FastChange
+					{...props}
+					modifier={-1}
+					setValue={setValue}
+					value={value}
+					icon="minus"
+				/>
+				<FastChange
+					{...props}
+					modifier={+1}
+					setValue={setValue}
+					value={value}
+					icon="plus"
+				/>
+
+				{typeof props.defaultValue !== 'undefined' && (
+					<IconButton
+            icon={"undo-variant"}
+						onPress={() =>
+							runInAction(() => {
+								if (typeof props.defaultValue === 'undefined') return
+								props.onChange(props.defaultValue)
+								setValue(props.defaultValue?.toString() ?? '')
+							})
+						}
 					/>
 				)}
-			</Card.Content>
-			<Card.Actions style={{ gap: Spacings.s2 }}>
-				{installed && <AlreadyInstalled />}
-				{downloaded && <Delete downloaded={downloaded}></Delete>}
-				{progress && downloading && !installed && <Cancel />}
-				{progress && !downloading && !installed && <CancelDisabled />}
-				{!progress && !installed && (
-					<InstallOrDownload downloaded={!!downloaded} {...props} />
-				)}
-			</Card.Actions>
+			</View>
+
+			{props.description && (
+				<HelperText type="info">{props.description}</HelperText>
+			)}
 		</>
 	)
-})
-
-// eslint-disable-next-line mobx/missing-observer
-export const Cancel = function Cancel() {
-	return (
-		<Button
-			icon={'cancel'}
-			mode="contained-tonal"
-			onPress={() => {
-				runInAction(() => {
-					State.progress = null
-				})
-				State.downloader?.cancelAsync()
-				delete State.downloader
-			}}
-		>
-			Отменить
-		</Button>
-	)
 }
 
 // eslint-disable-next-line mobx/missing-observer
-export const CancelDisabled = function CancelDisabled() {
+function FastChange(
+	props: Omit<NumberInputSettingProps<number | undefined>, 'value'> & {
+		value: string | undefined
+		setValue: React.Dispatch<string | undefined>
+		modifier: number
+		icon: string
+	},
+) {
 	return (
-		<Button
-			mode="contained-tonal"
-			disabled
-			style={styles.cancelDisabledStyle}
-			contentStyle={styles.contentStyleCancelDisabled}
-		>
-			<HelperText type="info">Отмените другие загрузки</HelperText>
-		</Button>
-	)
-}
-
-export const Delete = observer(function Delete(props: {
-	downloaded: (typeof State)['files'][number]
-}) {
-	return (
-		<Button
-			mode="contained-tonal"
-			icon="delete"
+		<IconButton
+			icon={props.icon}
 			onPress={() => {
-				// Finally bc if it fails to delete then there is no way to redownload it
-				FileSystem.deleteAsync(props.downloaded.uri)
-					.finally(() => {
-						runInAction(() => {
-							State.files = State.files.filter(
-								e => e.uri !== props.downloaded.uri,
-							)
-						})
-					})
-					.catch(() => {
-						Logger.debug('No file found to be deleted:', props.downloaded.uri)
-					})
+				const num = props.value
+					? parseInt(props.value)
+					: (props.defaultValue ?? 0)
+				const changed = num + props.modifier
+				runInAction(
+					() => (props.onChange(changed), props.setValue(changed.toString())),
+				)
 			}}
-		>
-			Удалить
-		</Button>
-	)
-})
-const styles = StyleSheet.create({
-	contentStyleCancelDisabled: {
-		padding: 0,
-		alignItems: 'center',
-		justifyContent: 'center',
-		alignContent: 'center',
-	},
-	cancelDisabledStyle: {
-		padding: 0,
-	},
-})
-</file>
-
-<file path="src/screens/settings/update/screen.tsx">
-// import * as MediaLibrary from 'expo-media-library'
-// import * as Permissions from 'expo-permissions'
-
-import { observer } from 'mobx-react-lite'
-import { FlatList, ListRenderItem, View } from 'react-native'
-
-import UpdateDate from '@/components/UpdateDate'
-import { Github } from '@/services/github/api'
-import { GithubRelease } from '@/services/github/entities'
-
-import Release from './Release'
-import UpdateInfo from './UpdateInfo'
-
-// TODO Filter beta
-// TODO Toggle tips
-
-export default observer(function UpdatesScreen() {
-	if (Github.Releases.fallback)
-		return (
-			<View>
-				<UpdateInfo />
-				{Github.Releases.fallback}
-			</View>
-		)
-
-	return (
-		<FlatList
-			refreshControl={Github.Releases.refreshControl}
-			data={Github.Releases.result}
-			maxToRenderPerBatch={2}
-			ListHeaderComponent={UpdateInfo}
-			ListFooterComponent={
-				<UpdateDate key={'updates'} store={Github.Releases} />
-			}
-			keyExtractor={keyExtractor}
-			renderItem={renderItem}
 		/>
 	)
-})
-
-const keyExtractor = (i: GithubRelease) => i.id + ''
-const renderItem: ListRenderItem<GithubRelease> = props => (
-	<Release {...props} />
-)
-</file>
-
-<file path="src/screens/settings/update/UpdateInfo.tsx">
-import * as Application from 'expo-application'
-import * as Updates from 'expo-updates'
-import { memo } from 'react'
-import { StyleSheet } from 'react-native'
-import { Card, Text } from 'react-native-paper'
-import { globalStyles } from '../../../constants'
-import { Spacings } from '../../../utils/Spacings'
-import { ModalAlert } from '../../../utils/Toast'
-import MicroUpdate from './micro-update'
-
-// eslint-disable-next-line mobx/missing-observer
-export default memo(function UpdateInfo() {
-	return (
-		<Card style={styles.updatesCard}>
-			<Card.Content style={globalStyles.stretch}>
-				<Text>Версия: </Text>
-				<Text variant="labelLarge">{Application.nativeApplicationVersion}</Text>
-			</Card.Content>
-			<Card.Content style={globalStyles.stretch}>
-				<Text>Сборка: </Text>
-				<Text variant="labelLarge" onPress={buildInfo}>
-					<MicroUpdate />
-				</Text>
-			</Card.Content>
-		</Card>
-	)
-})
-
-const buildInfo = () =>
-	ModalAlert.show(
-		'Версия сборки',
-		'Некоторые баги не требуют обновления всего дневника, для них создается небольшая сборка которую приложение устанавливает при каждом запуске.\nПолная версия сборки: ' +
-			(Updates.updateId ?? 'По умолчанию'),
-	)
+}
 
 const styles = StyleSheet.create({
-	updatesCard: { margin: Spacings.s2, marginTop: Spacings.s3 },
+	view: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		alignContent: 'center',
+		gap: Spacings.s1,
+		marginVertical: Spacings.s2,
+	},
+	textInput: { flex: 2, maxWidth: '50%' },
 })
 </file>
 
-<file path="src/screens/settings/update/Warnings.tsx">
-import { Theme } from '@/models/theme'
+<file path="src/components/ToggleChip.tsx">
+import { runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
-import { memo, useCallback, useMemo } from 'react'
-import { StyleProp, ViewStyle } from 'react-native'
+import { useCallback } from 'react'
 import { Chip } from 'react-native-paper'
-import { parse } from 'semver'
-import { ModalAlert } from '../../../utils/Toast'
 
-// eslint-disable-next-line mobx/missing-observer
-export default memo(function Warnings(props: { version: string }) {
-	if (!props.version) return false
-	const versionNum = parse(props.version)
-
-	return Object.entries(minFeatureVersions)
-		.filter(e => {
-			const compare = versionNum?.compare(e[1][0])
-			if (compare === -1 || compare === 0) return true
-
-			return false
-		})
-		.map(e => <WarningChip key={e[1][1]} title={e[1][1]} body={e[1][2]} />)
-})
-
-const WarningChip = observer(function WarningChip(props: {
-	title: string
-	body: string
+export const ToggleChip = observer(function Filter<T extends object>(props: {
+	store: T
+	storeKey: keyof FilterObject<T, boolean>
+	label: string
 }) {
 	const onPress = useCallback(() => {
-		ModalAlert.show(props.title, props.body)
-	}, [props.body, props.title])
-
-	const style = useMemo<StyleProp<ViewStyle>>(
-		() => ({
-			backgroundColor: Theme.colors.errorContainer,
-		}),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[Theme.colors.errorContainer],
-	)
-
+		runInAction(
+			() =>
+				((props.store[props.storeKey] as boolean) =
+					!props.store[props.storeKey]),
+		)
+	}, [props.store, props.storeKey])
 	return (
-		<Chip style={style} onPress={onPress} compact>
-			{props.title}
+		<Chip
+			mode="flat"
+			selected={props.store[props.storeKey] as boolean}
+			compact
+			onPress={onPress}
+		>
+			{props.label}
 		</Chip>
 	)
 })
-
-const minFeatureVersions = {
-	updatesScreen: [
-		'0.13.0',
-		'Старые обновления',
-		'В этой версии поддерживается обновление только до последней версии, вы не сможете выбрать версию из списка, как сейчас',
-	],
-	oldStorage: [
-		'0.11.6',
-		'Старое хранилище',
-		'В этой версии данные хранились по-другому, ваши настройки там не будут использованы. Но и удалены не будут.',
-	],
-	login: [
-		'0.0.5',
-		'Сломан вход',
-		'В этой версии сломан вход, придется перезаходить',
-	],
-	inAppUpdate: [
-		'0.0.0',
-		'Нет обновлений',
-		'В этой версии нет обновлений внутри приложения, вам нужно будет вручную скачать и установить новую версию',
-	],
-} satisfies Record<string, [string, string, string]>
-</file>
-
-<file path="src/screens/settings/navigation.ts">
-import { createStackNavigator } from '@react-navigation/stack'
-
-export const SETTINGS_ROUTES = {
-	main: 'Настройки ',
-	update: 'Обновления',
-	colors: 'Внешний вид',
-	marks: 'Оценки',
-	notifs: 'Уведомления',
-	advanced: 'Расширенные',
-	support: 'О приложении',
-	privacy: 'Политика конфиденциальности',
-	terms: 'Правила и Условия пользования',
-}
-
-export type SettingsRoutes = Record<keyof typeof SETTINGS_ROUTES, undefined>
-export const SettingsNavigation = createStackNavigator<SettingsRoutes>()
-</file>
-
-<file path="src/models/async.store.tsx">
-import ErrorHandler from '@/components/ErrorHandler'
-import Loading from '@/components/Loading'
-import {
-	CacheUsed,
-	CacheableReq,
-	API as NSApi,
-	NetSchoolError,
-} from '@/services/net-school/api'
-import {
-	action,
-	autorun,
-	makeAutoObservable,
-	observable,
-	reaction,
-	toJS,
-} from 'mobx'
-import { RefreshControl } from 'react-native'
-import { Logger } from '../constants'
-
-export type AsyncMethod = (
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	arg: Record<string, any> & CacheableReq,
-) => Promise<unknown>
-
-/**
- * Selects only accepted api methods
- */
-export type FunctionsFromObject<O extends object> = FilterObject<O, AsyncMethod>
-
-/**
- * Return type of the useAPI hook
- */
-export type AsyncState<Result> = (
-	| { result: Result; fallback: undefined }
-	| { result: undefined; fallback: React.JSX.Element }
-) & {
-	reload: () => void
-	refreshControl: React.JSX.Element
-	updateDate: string
-}
-
-/**
- * Different from Partial<T> is that it requires to define ALL keys
- * but any of them can be undefined
- */
-type Optional<T> = { [Key in Exclude<keyof T, symbol>]: T[Key] | undefined }
-
-export type AdditionalDeps = (
-	| object
-	| null
-	| undefined
-	| string
-	| boolean
-	| number
-)[]
-
-const firstTimeCacheUsedFor = new Set<string>()
-
-export class AsyncStore<
-	Source extends object,
-	MethodName extends keyof FunctionsFromObject<Source>,
-	Fn = FunctionsFromObject<Source>[MethodName],
-	FnReturn = Fn extends AsyncMethod ? Awaited<ReturnType<Fn>> : never,
-	FnParams = Fn extends AsyncMethod ? Optional<Parameters<Fn>[0]> : never,
-	DefaultParams = Record<'', never>,
-> {
-	constructor(
-		// eslint-disable-next-line @typescript-eslint/naming-convention
-		private readonly API: Source,
-		private readonly method: MethodName,
-		public readonly name: string,
-		private readonly defaultParams?: DefaultParams,
-		private readonly additionalDeps: () => AdditionalDeps = () => [
-			NSApi.session,
-			NSApi.reload,
-		],
-		public debug = false,
-		private readonly skipErrorMessages = false,
-	) {
-		this.log('Store created')
-
-		makeAutoObservable<
-			this,
-			| 'reload'
-			| 'reloadTimes'
-			| 'resultCache'
-			| 'update'
-			| 'error'
-			| 'loading'
-			| 'params'
-			| 'method'
-			| 'API'
-			| 'log'
-			| 'refreshControlLoadingOverride'
-		>(
-			this,
-			{
-				reload: true,
-				reloadTimes: true,
-				resultCache: true,
-				result: true,
-				updateDate: true,
-				refreshControl: true,
-				fallback: true,
-				update: true,
-				error: observable.ref,
-				params: observable.struct,
-				withParams: action,
-				loading: true,
-				refreshControlLoadingOverride: true,
-				log: false,
-				debug: false,
-				name: false,
-				method: false,
-				API: false,
-			},
-			{ autoBind: true, name: this.name },
-		)
-
-		// eslint-disable-next-line @typescript-eslint/no-this-alias
-		const store = this
-
-		// Reload on reload request
-		autorun(function apiStoreReload() {
-			store.update(toJS(store.params))
-		})
-
-		reaction(
-			() => this.additionalDeps(),
-			() => this.update(this.params),
-		)
-	}
-
-	private log(...data: unknown[]) {
-		if (this.debug) {
-			Logger.debug('\u001b[36mДля ' + this.name + '\u001b[0m', ...data)
-		}
-	}
-
-	private reload() {
-		this.log('Reloading')
-		this.reloadTimes++
-		this.update(this.params)
-	}
-
-	private error: Error | undefined = undefined
-	private loading = true
-	private reloadTimes: number = 0
-	private params: FnParams | undefined = undefined
-
-	private resultCache: FnReturn | undefined = undefined
-	get result() {
-		if (this.loading) return undefined
-		return this.resultCache
-	}
-	set result(v) {
-		this.resultCache = v
-	}
-
-	updateDate = 'Загрузка...'
-
-	private refreshControlLoadingOverride = true
-	get refreshControl() {
-		return (
-			<RefreshControl
-				refreshing={this.refreshControlLoadingOverride || this.loading}
-				onRefresh={this.reload}
-			/>
-		)
-	}
-
-	get fallback() {
-		const noResult = typeof this.result === 'undefined'
-		if (this.loading || noResult) {
-			return this.error && noResult ? (
-				<ErrorHandler
-					error={[this.reloadTimes, this.error]}
-					reload={this.reload}
-					name={this.name}
-				/>
-			) : (
-				<Loading text={`Загрузка ${this.name}...`} />
-			)
-		}
-	}
-
-	withParams(
-		params: Omit<
-			FnParams,
-			keyof DefaultParams | 'cache' | 'skipErrorMessages' | 'store'
-		>,
-	) {
-		this.log('Changing params from', this.params, 'to', params)
-		// @ts-expect-error Type infering
-		this.params = params
-	}
-
-	private *update(params: FnParams | undefined) {
-		this.log(
-			'Request update, params:',
-			params,
-			'\ndefault params:',
-			this.defaultParams,
-		)
-
-		// Something wrong with types
-		const request = this.API[this.method]
-		if (typeof request !== 'function') {
-			Logger.warn(
-				'Method ' +
-					(typeof this.method === 'symbol'
-						? 'Symbol::' + this.method.description
-						: (this.method as string)) +
-					' of api is not a function!',
-			)
-			return
-		}
-
-		if (this.defaultParams)
-			params = { ...this.defaultParams, ...params } as FnParams
-
-		if (!params) {
-			this.log('no params!!!')
-			return
-		}
-		this.log('Params', params)
-
-		const deps = Object.values(params).concat(this.additionalDeps())
-		this.log('deps', deps)
-
-		// Some of the params arent loaded, skipping...
-		if (deps.some(e => typeof e === 'undefined' || e === null)) {
-			this.log(
-				'Undefined values in params, additional ' + this.additionalDeps(),
-			)
-			return
-		}
-
-		const key = String(this.method) + '-' + JSON.stringify(params)
-
-		// Only force load from cache on the first request
-		const cache: CacheUsed | undefined = firstTimeCacheUsedFor.has(key)
-			? undefined
-			: { isUsed: false }
-
-		try {
-			this.result = yield request.call(this.API, {
-				...params,
-				cache,
-				skipErrorMessages: this.skipErrorMessages,
-				store: this.name,
-			})
-			this.updateDate = `Дата обновления: ${new Date().toLocaleTimeString()}`
-
-			if (cache?.isUsed) {
-				this.refreshControlLoadingOverride = true
-				this.reload()
-			} else if (this.refreshControlLoadingOverride) {
-				this.refreshControlLoadingOverride = false
-			}
-
-			this.log(
-				'Loaded, first time cache expected',
-				!firstTimeCacheUsedFor.has(key),
-				cache,
-				'used',
-				cache?.isUsed,
-			)
-		} catch (error) {
-			const canIgnore =
-				(error instanceof Error && error.message === 'Aborted') ||
-				(error instanceof NetSchoolError && error.loggerIgnore)
-
-			if (!canIgnore) {
-				Logger.error(
-					'Failed to update для',
-					this.name,
-					error instanceof Error ? error.stack : error,
-				)
-			}
-
-			this.error = error
-		} finally {
-			this.loading = false
-			firstTimeCacheUsedFor.add(key)
-		}
-	}
-}
-</file>
-
-<file path="src/models/key.store.tsx">
-import { action, makeAutoObservable, runInAction } from 'mobx'
-import { useEffect } from 'react'
-
-interface KeyStoreOptions {
-	maxUnusedStores: number
-}
-
-interface StoredValue<T> {
-	id: string
-	store: T
-	canDispose: boolean
-	dispose: () => () => void
-}
-
-export class KeyStore<Key = object, T = object> {
-	private stores: Record<string, StoredValue<T>> = {}
-	private readonly options: KeyStoreOptions
-
-	constructor(
-		private readonly getId: (id: Key) => string,
-		private readonly createStore: (id: Key) => T,
-		{ maxUnusedStores = 3 }: Partial<KeyStoreOptions> = {},
-	) {
-		makeAutoObservable<this, 'options' | 'create' | 'stores'>(this, {
-			create: action,
-			stores: true,
-			options: false,
-			use: false,
-			get: false,
-		})
-		this.options = { maxUnusedStores }
-	}
-
-	get(
-		key: Key,
-		setCanDispose = true,
-	): Omit<StoredValue<T>, 'canDispose' | 'sid'> {
-		const id = this.getId(key)
-		if (this.stores[id]) {
-			if (setCanDispose)
-				runInAction(() => {
-					this.stores[id].canDispose = false
-				})
-
-			return this.stores[id]
-		}
-
-		return this.create(key, id)
-	}
-
-	use(id: Key) {
-		const { store, dispose } = this.get(id)
-
-		// eslint-disable-next-line react-hooks/rules-of-hooks, react-hooks/exhaustive-deps
-		useEffect(dispose, [])
-		return store
-	}
-
-	private create(id: Key, sid: string) {
-		const store = this.createStore(id)
-
-		const unusedStores = Object.values(this.stores).filter(e => e.canDispose)
-		if (unusedStores.length > this.options.maxUnusedStores) {
-			runInAction(() => {
-				delete this.stores[unusedStores[0].id]
-			})
-		}
-
-		return (this.stores[sid] = {
-			id: sid,
-			store,
-			canDispose: false,
-			dispose: () => () => {
-				runInAction(() => {
-					this.stores[sid].canDispose = true
-				})
-			},
-		})
-	}
-}
-</file>
-
-<file path="src/services/mgik/api.ts">
-// ========== Output type definitions (transformed data) ==========
-
-/**
- * Client type (usually determines whether the schedule is for a specific group or an individual).
- */
-export interface ClientType {
-	/** Numeric type identifier (e.g., 0 for group, 1 for individual). */
-	type: number
-}
-
-/**
- * Form of education (e.g., full-time, part-time).
- */
-export interface FormOfEducation {
-	/** Unique identifier. */
-	id: number
-	/** Display name in Russian (e.g., "Очная форма"). */
-	name: string
-}
-
-/**
- * Course (year of study).
- */
-export interface Course {
-	/** Course number (1-6). */
-	course: number
-}
-
-/**
- * Faculty (institute/department).
- */
-export interface Faculty {
-	/** Unique identifier. */
-	id: number
-	/** Display name. */
-	name: string
-}
-
-/**
- * Academic group.
- */
-export interface Group {
-	/** Unique group identifier. */
-	id: number
-	/** Group name (e.g., "1-2501"). */
-	name: string
-}
-
-/**
- * Aggregated dropdown data returned by {@link ScheduleClient.getDropdownData}.
- */
-export interface DropdownData {
-	/** Possible client types. */
-	clientTypes: ClientType[]
-	/** List of forms of education. */
-	formsOfEducation: FormOfEducation[]
-	/** List of courses. */
-	courses: Course[]
-	/** List of faculties. */
-	faculties: Faculty[]
-	/** List of groups (initial unfiltered list). */
-	groups: Group[]
-}
-
-/**
- * A single schedule entry (lesson).
- */
-export interface ScheduleItem {
-	/** Unique record identifier. */
-	id: number
-	/** Discipline (subject) name. */
-	discipline: string
-	/** Teacher's full name (including any title). */
-	teacherName: string
-	/** Full auditorium name (e.g., "ауд.421-К3"). */
-	auditoriumName: string
-	/** Short auditorium name (e.g., "ауд.421"). */
-	auditoriumShortName: string
-	/** Building/corps name (e.g., "К3"). */
-	building: string
-	/** Type of lesson (lecture, practice, etc.). */
-	lessonType: string
-	/** Week number (1-based). */
-	week: number
-	/** Date of the lesson (midnight local time). */
-	date: Date
-	/** Day of week (1=Monday ... 7=Sunday). */
-	dayOfWeek: number
-	/** Lesson number within the day (1-8). */
-	lessonNumber: number
-	/** Exact start date and time of the lesson (Date object). */
-	startTime: Date
-	/** Exact end date and time of the lesson (Date object). */
-	endTime: Date
-	/** Group identifier (same as requested). */
-	groupId: number
-	/** Subgroup number (0 = no subdivision). */
-	subgroup: number
-	/** Additional comment for the teacher (e.g., replacement). */
-	teacherComment: string
-	/** Additional comment for the lesson (e.g., online). */
-	lessonComment: string
-}
-
-/**
- * Parameters for fetching the schedule.
- */
-export interface ScheduleParams {
-	/** Group identifier (required). */
-	idGroup: number | string
-	/** Flag for distance learning? 0 or 1 (optional). */
-	isDo?: number
-}
-
-// ========== Internal raw API types ==========
-
-interface RawTpItem {
-	type: string
-}
-interface RawFoItem {
-	nameFO: string
-	idFO: string
-}
-interface RawKursItem {
-	Kurs: string
-}
-interface RawFacultItem {
-	idFac: string
-	nameFac: string
-}
-interface RawGroupItem {
-	idGroup: string
-	nameGroup: string
-	[key: string]: any
-}
-interface RawScheduleItem {
-	idRasp: string
-	Disciplina: string
-	namePrep: string
-	nameAud: string
-	nameShort: string
-	nameCorp: string
-	nameDiscVid: string
-	Nedel: string
-	date: string
-	Day: string
-	Para: string
-	TimeInPara: string | null
-	TimeOutPara: string | null
-	idGroup: string
-	partGroup: string
-	commentPrep: string
-	commentData: string
-	[key: string]: any
-}
-
-// ========== Lesson time table ==========
-
-/**
- * Fixed time slots for lessons (1-based lesson number -> start/end time).
- * Index 0 corresponds to lesson 1.
- */
-const LESSON_TIME_SLOTS: { start: string; end: string }[] = [
-	{ start: '08:20', end: '09:50' }, // lesson 1
-	{ start: '10:00', end: '11:30' }, // lesson 2
-	{ start: '11:40', end: '13:10' }, // lesson 3
-	{ start: '13:40', end: '15:10' }, // lesson 4
-	{ start: '15:20', end: '16:50' }, // lesson 5
-	{ start: '17:00', end: '18:30' }, // lesson 6
-	{ start: '18:40', end: '20:10' }, // lesson 7
-	{ start: '20:20', end: '21:50' }, // lesson 8
-]
-
-// ========== Client class ==========
-
-export class ScheduleClient {
-	private readonly baseURL: string
-	private readonly idClient: string
-
-	/**
-	 * Creates a new ScheduleClient.
-	 * @param idClient - Client identifier used in every request (default: '74').
-	 * @param baseURL   - Base URL of the API (default: 'https://edu.mgik.org/getrasp/').
-	 */
-	constructor(
-		idClient: string = '74',
-		baseURL: string = 'https://edu.mgik.org/getrasp/',
-	) {
-		this.idClient = idClient
-		this.baseURL = baseURL.endsWith('/') ? baseURL : `${baseURL}/`
-	}
-
-	/**
-	 * Fetches all data needed to populate dropdown lists.
-	 * All fields are transformed to camelCase, numbers are parsed from strings.
-	 *
-	 * @returns A promise resolving to {@link DropdownData}.
-	 */
-	async getDropdownData(): Promise<DropdownData> {
-		const [rawTp, rawFo, rawKurs, rawFacult, rawGroups] = await Promise.all([
-			this.fetchTp(),
-			this.fetchFo(),
-			this.fetchKurs(),
-			this.fetchFacult(),
-			this.fetchGroups('0', '0', '0'),
-		])
-
-		return {
-			clientTypes: rawTp.map(item => ({ type: parseInt(item.type, 10) })),
-			formsOfEducation: rawFo.map(item => ({
-				id: parseInt(item.idFO, 10),
-				name: item.nameFO,
-			})),
-			courses: rawKurs.map(item => ({ course: parseInt(item.Kurs, 10) })),
-			faculties: rawFacult.map(item => ({
-				id: parseInt(item.idFac, 10),
-				name: item.nameFac,
-			})),
-			groups: rawGroups.map(item => ({
-				id: parseInt(item.idGroup, 10),
-				name: item.nameGroup,
-			})),
-		}
-	}
-
-	/**
-	 * Fetches the schedule for a specific group.
-	 * All fields are transformed to camelCase, numbers and dates are parsed,
-	 * and start/end times are returned as Date objects (combining lesson date and time).
-	 * Missing time slots are filled from the standard lesson table.
-	 *
-	 * @param params - Parameters containing at least `idGroup` and optional `isDo`.
-	 * @returns A promise resolving to an array of {@link ScheduleItem}.
-	 */
-	async getSchedule(params: ScheduleParams): Promise<ScheduleItem[]> {
-		const query: Record<string, string> = {
-			method: 'getRasp',
-			idClient: this.idClient,
-			idGroup: String(params.idGroup),
-		}
-		if (params.isDo !== undefined) {
-			query.isDo = String(params.isDo)
-		}
-
-		const raw = await this.getJson<RawScheduleItem[]>(query)
-		return raw.map(item => this.transformScheduleItem(item))
-	}
-
-	// ---- Private helper methods ----
-
-	/**
-	 * Generic GET request returning parsed JSON.
-	 */
-	private async getJson<T>(params: Record<string, string>): Promise<T> {
-		const url = new URL('ajax-dropdown-style', this.baseURL)
-		url.search = new URLSearchParams(params).toString()
-
-		const response = await fetch(url.toString(), {
-			method: 'GET',
-			headers: { Accept: 'application/json' },
-		})
-
-		if (!response.ok) {
-			throw new Error(
-				`Request failed with status ${response.status}: ${response.statusText}`,
-			)
-		}
-
-		return response.json() as Promise<T>
-	}
-
-	private fetchTp(): Promise<RawTpItem[]> {
-		return this.getJson<RawTpItem[]>({
-			method: 'getTp',
-			idClient: this.idClient,
-		})
-	}
-
-	private fetchFo(): Promise<RawFoItem[]> {
-		return this.getJson<RawFoItem[]>({
-			method: 'getFo',
-			idClient: this.idClient,
-		})
-	}
-
-	private fetchKurs(): Promise<RawKursItem[]> {
-		return this.getJson<RawKursItem[]>({
-			method: 'getKurs',
-			idClient: this.idClient,
-		})
-	}
-
-	private fetchFacult(): Promise<RawFacultItem[]> {
-		return this.getJson<RawFacultItem[]>({
-			method: 'getFacult',
-			idClient: this.idClient,
-		})
-	}
-
-	private fetchGroups(
-		idFac: string,
-		FO: string,
-		idKurs: string,
-	): Promise<RawGroupItem[]> {
-		return this.getJson<RawGroupItem[]>({
-			method: 'getGroups',
-			idClient: this.idClient,
-			idFac,
-			FO,
-			idKurs,
-		})
-	}
-
-	/**
-	 * Transforms a raw schedule item into the clean output format.
-	 * Calculates start/end time if they are missing, and converts everything to proper types.
-	 */
-	private transformScheduleItem(raw: RawScheduleItem): ScheduleItem {
-		const lessonNumber = parseInt(raw.Para, 10)
-		const timeSlot = LESSON_TIME_SLOTS[lessonNumber - 1] ?? {
-			start: '',
-			end: '',
-		}
-
-		// Use API-provided time if present, otherwise fall back to the table.
-		const startTimeStr = raw.TimeInPara || timeSlot.start
-		const endTimeStr = raw.TimeOutPara || timeSlot.end
-
-		// Combine date and time strings into Date objects (local timezone).
-		const startTime = this.combineDateAndTime(raw.date, startTimeStr)
-		const endTime = this.combineDateAndTime(raw.date, endTimeStr)
-
-		return {
-			id: parseInt(raw.idRasp, 10),
-			discipline: raw.Disciplina,
-			teacherName: raw.namePrep,
-			auditoriumName: raw.nameAud,
-			auditoriumShortName: raw.nameShort,
-			building: raw.nameCorp || '',
-			lessonType: raw.nameDiscVid,
-			week: parseInt(raw.Nedel, 10),
-			date: new Date(raw.date + 'T00:00:00'), // keep date at midnight local time
-			dayOfWeek: parseInt(raw.Day, 10),
-			lessonNumber,
-			startTime,
-			endTime,
-			groupId: parseInt(raw.idGroup, 10),
-			subgroup: parseInt(raw.partGroup, 10) || 0,
-			teacherComment: raw.commentPrep || '',
-			lessonComment: raw.commentData || '',
-		}
-	}
-
-	/**
-	 * Combines a date string (YYYY-MM-DD) with a time string (HH:MM) into a Date object.
-	 * Uses local timezone.
-	 */
-	private combineDateAndTime(dateStr: string, timeStr: string): Date {
-		if (!timeStr) {
-			// If time is missing, fallback to midnight of that day.
-			return new Date(dateStr + 'T00:00:00')
-		}
-		return new Date(`${dateStr}T${timeStr}:00`)
-	}
-}
-</file>
-
-<file path="src/services/net-school/store.ts">
-import {
-	AsyncMethod,
-	AsyncState,
-	AsyncStore,
-	FunctionsFromObject,
-} from '@/models/async.store'
-import { KeyStore } from '@/models/key.store'
-import { API } from './api'
-
-export const StudentsStore = method('students', 'списка учеников', {})
-
-export const EducationStore = method('education', 'данных об обучении')
-export const SubjectsStore = method('subjects', 'списка предметов')
-export const TotalsStore = method('totals', 'итоговых оценок')
-
-export const DiaryStore = method('diary', 'дневника')
-export const NotifyDiaryStore = method('diary', 'дневника уведомлений')
-export const AssignmentsStore = method('assignments', 'оценок')
-export const MarkAssignmentsStore = method(
-	'assignments',
-	'оценок',
-	undefined,
-	true,
-)
-export const AttachmentsStore = method('attachments', 'файлов')
-
-interface SubjectPerformanceStoreID {
-	studentId: number | undefined
-	subjectId: number
-}
-
-export const SubjectPerformanceStores = new KeyStore(
-	(id: SubjectPerformanceStoreID) => id.studentId + '|' + id.subjectId,
-	(id: SubjectPerformanceStoreID) =>
-		method('subjectPerformance', 'итогов по предмету', id),
-)
-
-function method<
-	MethodName extends keyof FunctionsFromObject<typeof API>,
-	Fn = FunctionsFromObject<typeof API>[MethodName],
-	FnReturn = Fn extends AsyncMethod ? Awaited<ReturnType<Fn>> : never,
-	DefaultParams = Record<'', never>,
->(
-	method: MethodName,
-	name: string,
-	defaultParams?: DefaultParams,
-	skipErrorMessages?: boolean,
-	debug?: boolean,
-) {
-	const store = new AsyncStore(
-		API,
-		method,
-		name,
-		defaultParams,
-		undefined,
-		debug,
-		skipErrorMessages,
-	)
-	return store as unknown as AsyncState<FnReturn> &
-		Pick<typeof store, 'withParams'>
-}
-
-export const HomeworkMarksStore = method('homework', 'домашка')
 </file>
 
 <file path="src/screens/day/edit/ReorderLessons.tsx">
@@ -2788,7 +2920,7 @@ export function sortByDate(
 <file path="src/screens/day/Progress.tsx">
 import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { Lesson, LessonState } from '@/services/net-school/lesson'
+import { ScheduleItem } from '@/services/mgik/api'
 import { useStyles } from '@/utils/useStyles'
 import { makeAutoObservable, runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
@@ -2807,27 +2939,29 @@ export const LessonProgressStore = new (class {
 })()
 const store = LessonProgressStore
 
-export default observer(function LessonProgress(props: { lesson: Lesson }) {
-	const studentSettings = XSettings.forStudentOrThrow()
+export default observer(function LessonProgress({
+	lesson,
+}: {
+	lesson: ScheduleItem
+}) {
 	const { elapsed, startsAfter, beforeStartMs, progress, state, remaining } =
 		useMemo(
 			() =>
-				Lesson.status(
-					props.lesson.start(studentSettings).getTime(),
-					props.lesson.end(studentSettings).getTime(),
+				scheduleStatus(
+					lesson.startTime.getTime(),
+					lesson.endTime.getTime(),
 					XSettings.useOverrideTime ? XSettings.overrideTimeD : store.now,
 				),
-			// eslint-disable-next-line react-hooks/exhaustive-deps
-			[props.lesson, store.now, XSettings.overrideTimeD],
+			[lesson, store.now, XSettings.overrideTimeD],
 		)
 
 	useEffect(() => {
-		if (state === LessonState.Going)
-			runInAction(() => (store.currentLesson = props.lesson.classmeetingId))
-		else if (store.currentLesson === props.lesson.classmeetingId) {
+		if (state === ScheduleState.Going)
+			runInAction(() => (store.currentLesson = lesson.id))
+		else if (store.currentLesson === lesson.id) {
 			runInAction(() => (store.currentLesson = 0))
 		}
-	}, [state, props.lesson.classmeetingId])
+	}, [state, lesson.id])
 
 	const textStyle = useStyles<TextStyle>(() => ({
 		color: Theme.colors.onSurfaceDisabled,
@@ -2838,12 +2972,11 @@ export default observer(function LessonProgress(props: { lesson: Lesson }) {
 		borderRadius: Theme.roundness,
 	}))
 
-	if (state === LessonState.NotStarted) {
-		// Do not show time above 15 mins
-		if (beforeStartMs < props.lesson.notifyBeforeSeconds * 1000) {
+	if (state === ScheduleState.NotStarted) {
+		if (beforeStartMs < 15 * 60 * 1000) {
 			return <Text style={textStyle}>{startsAfter}</Text>
 		}
-	} else if (state === LessonState.Going) {
+	} else if (state === ScheduleState.Going) {
 		return (
 			<View style={styles.row}>
 				<View style={styles.progressView}>
@@ -2854,10 +2987,55 @@ export default observer(function LessonProgress(props: { lesson: Lesson }) {
 			</View>
 		)
 	} else {
-		// Lesson is ended
 		return <Text style={textStyle}>Закончился</Text>
 	}
 })
+
+enum ScheduleState {
+	NotStarted,
+	Going,
+	Ended,
+}
+
+function scheduleStatus(start: number, end: number, now = Date.now()) {
+	const beforeStartMs = start - now
+	const beforeStart = separateTime(beforeStartMs)
+	const beforeEnd = separateTime(now - start)
+	const total = separateTime(end - start)
+	const progress = 100 - Math.ceil(((end - now) * 100) / (end - start))
+
+	return {
+		beforeStartMs,
+		startsAfter: `Начнется через ${toTime(beforeStart.hours, beforeStart.minutes, beforeStart.seconds)}`,
+		elapsed: `${total.hours >= 1 ? toTime(0, beforeEnd.hours, beforeEnd.minutes + 1) : toTime(beforeEnd.hours, beforeEnd.minutes + 1)}/${toTime(...(total.minutes + 1 >= 60 ? [total.hours + 1, 0] : [total.hours, total.minutes + 1]))}`,
+		remaining: toTime(
+			total.hours - beforeEnd.hours,
+			total.minutes - beforeEnd.minutes,
+			total.seconds - beforeEnd.seconds,
+		),
+		progress,
+		state:
+			now < start
+				? ScheduleState.NotStarted
+				: now <= end
+					? ScheduleState.Going
+					: ScheduleState.Ended,
+	}
+}
+
+function separateTime(ms: number) {
+	const hours = Math.floor(ms / (1000 * 60 * 60))
+	const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+	const seconds = Math.floor((ms % (1000 * 60)) / 1000)
+	return { hours, minutes, seconds }
+}
+
+function toTime(...args: number[]) {
+	return args
+		.filter((e, i) => (i === 0 ? e !== 0 : true))
+		.map(e => e.toString().padStart(2, '0'))
+		.join(':')
+}
 
 const styles = StyleSheet.create({
 	row: {
@@ -2871,1766 +3049,162 @@ const styles = StyleSheet.create({
 })
 </file>
 
-<file path="src/screens/login/in.tsx">
-import Header from '@/components/Header'
-import Loading from '@/components/Loading'
-import { AsyncStore } from '@/models/async.store'
-import { Theme } from '@/models/theme'
-import { API, NetSchoolApi } from '@/services/net-school/api'
-import { ROUTES } from '@/services/net-school/routes'
-import { makeAutoObservable, runInAction } from 'mobx'
-import { observer } from 'mobx-react-lite'
-import { useEffect, useRef } from 'react'
-import { BackHandler, RefreshControl, ScrollView, View } from 'react-native'
-import { Appbar, Button } from 'react-native-paper'
-import WebView from 'react-native-webview'
-import { Logger } from '../../constants'
-import { Spacings } from '../../utils/Spacings'
-import { Toast } from '../../utils/Toast'
-
-const LoginStore = new (class {
-	constructor() {
-		makeAutoObservable(this)
-		setTimeout(() => runInAction(() => (this.loading = 'loaded')), 1000)
-	}
-
-	loggingIn = false
-	regionName = ''
-
-	loading: 'loaded' | undefined = undefined
-})()
-
-const EndpointsStore = new AsyncStore(
-	NetSchoolApi,
-	'fetchEndpoints',
-	'списка регионов',
-	{},
-	// It will not do request to region list on each app
-	// startup for the first second while app is loading
-	() => [LoginStore.loading],
-)
-
-export default observer(function LoginScreen() {
-	return (
-		<View
-			style={{
-				height: '100%',
-			}}
-		>
-			<Header title="Вход">
-				{LoginStore.regionName && (
-					<Appbar.BackAction
-						onPress={() => runInAction(() => (LoginStore.regionName = ''))}
-					/>
-				)}
-			</Header>
-
-			<LoginScreenContent />
-			<View style={{ margin: Spacings.s2 }}></View>
-		</View>
-	)
-})
-
-export const LoginScreenContent = observer(function LoginScreenContent() {
-	const { loggingIn, regionName } = LoginStore
-	const webviewRef = useRef<WebView>(null)
-
-	useEffect(() => {
-		const goBack = () => {
-			if (!webviewRef.current) return
-			webviewRef.current.goBack()
-			return true
-		}
-
-		if (regionName) {
-			const listener = BackHandler.addEventListener('hardwareBackPress', goBack)
-			return () => listener.remove()
-		}
-
-		return () => void 0
-	}, [regionName])
-
-	if (loggingIn) return <Loading text="Авторизация..." />
-	if (EndpointsStore.fallback) return EndpointsStore.fallback
-
-	if (!regionName)
-		return (
-			<ScrollView
-				style={{ margin: 0, padding: 0, minWidth: 350, flex: 1 }}
-				refreshControl={EndpointsStore.refreshControl}
-			>
-				{EndpointsStore.result!.slice()
-					.sort((a, b) => a.name.localeCompare(b.name))
-					.map((endpoint, index) => (
-						<Button
-							key={index.toString()}
-							onPress={() => {
-								runInAction(() => {
-									API.setEndpoint(endpoint.url)
-									LoginStore.regionName = endpoint.name
-								})
-							}}
-							labelStyle={{
-								textAlign: 'left',
-								alignSelf: 'flex-start',
-								fontSize: 16,
-							}}
-							style={{
-								backgroundColor: Theme.colors.elevation.level1,
-								margin: Spacings.s1,
-							}}
-						>
-							{endpoint.name}
-						</Button>
-					))}
-			</ScrollView>
-		)
-
-	const onWebviewRefresh = () => {
-		webviewRef.current?.reload()
-	}
-
-	return (
-		<ScrollView
-			refreshControl={
-				<RefreshControl refreshing={false} onRefresh={onWebviewRefresh} />
-			}
-			contentContainerStyle={{ width: '100%', height: '100%' }}
-		>
-			<WebView
-				source={{
-					uri: NetSchoolApi.getOrigin(API) + ROUTES.login,
-				}}
-				originWhitelist={['https://*', `${ROUTES.mobileAppProtocol}*`]}
-				ref={webviewRef}
-				onShouldStartLoadWithRequest={event => {
-					if (event.url.startsWith(ROUTES.mobileAppProtocol)) {
-						const pincode = new URL(event.url).searchParams.get('pincode')
-						if (pincode) {
-							;(async () => {
-								runInAction(() => (LoginStore.loggingIn = true))
-
-								try {
-									await API.getToken(ROUTES.getTokenTemplate(pincode))
-								} catch (e) {
-									Logger.error(e)
-									Toast.show({
-										title: 'Не удалось получить токен авторизации',
-										body: e + '',
-										error: true,
-									})
-								} finally {
-									runInAction(() => (LoginStore.loggingIn = false))
-								}
-							})()
-							return false
-						} else {
-							Toast.show({
-								title: 'Код не получен!',
-								body: 'Такое иногда происходит в конце четвертей, когда журнал перегружен. Попробуйте снова',
-								error: true,
-							})
-							runInAction(() => (LoginStore.regionName = ''))
-
-							return false
-						}
-					}
-
-					return true
-				}}
-			/>
-		</ScrollView>
-	)
-})
-</file>
-
-<file path="src/screens/settings/advanced/ExportSettings.tsx">
-import { Size } from '@/components/Size'
-import { getStorageValue, setStorageValue } from '@/utils/configure'
-import { ModalAlert } from '@/utils/Toast'
-import { nativeApplicationVersion } from 'expo-application'
-import { File, Paths } from 'expo-file-system'
-import { isAvailableAsync, shareAsync } from 'expo-sharing'
-import { PersistStoreMap } from 'mobx-persist-store'
-import { observer } from 'mobx-react-lite'
-import { List, Text } from 'react-native-paper'
-
-const currentFormatVersion = 1
-
-interface ExportedUdnevkaSettingsFormat {
-	formatVersion: typeof currentFormatVersion // future proof
-	appVersion: string // 0.18.0
-	storages: {
-		formatVersion: typeof currentFormatVersion // future proof
-		id: string
-		content: string
-	}[]
-}
-
-export const ExportImportSettings = observer(function ExportImportSettings() {
-	return (
-		<>
-			<List.Item
-				title={<Text>Экспортировать</Text>}
-				onPress={async () => {
-					try {
-						if (!(await isAvailableAsync()))
-							throw new Error('Невозможно на вашей платформе')
-
-						const storages = await Promise.all(
-							[...PersistStoreMap.values()].map(store =>
-								store
-									.getPersistedStore()
-									.then(p => ({ storage: p, key: store.storageName })),
-							),
-						)
-
-						const exportedStorage: ExportedUdnevkaSettingsFormat = {
-							formatVersion: currentFormatVersion,
-							appVersion: nativeApplicationVersion ?? '0.0.0',
-							storages: storages
-								.map(e => ({
-									formatVersion: currentFormatVersion,
-									id: e.key,
-									content: getStorageValue(e.key),
-								}))
-								.filter(e => !!e.content),
-						}
-
-						const file = new File(Paths.cache, 'settingsExport.json')
-						if (!file.exists) file.create({ overwrite: true })
-						file.write(JSON.stringify(exportedStorage))
-						shareAsync(file.uri, { mimeType: 'application/json' })
-					} catch (e) {
-						ModalAlert.show('Ошибка', e + '', true)
-					}
-				}}
-			/>
-			<List.Item
-				title={<Text>Импортировать</Text>}
-				onPress={async () => {
-					try {
-						const file = await File.pickFileAsync(undefined, 'application/json')
-						if (Array.isArray(file))
-							return ModalAlert.show(
-								'Ошибка',
-								'Вы выбрали несколько файлов, а нужен только один!',
-								true,
-							)
-
-						const text = await file.text()
-
-						let json: unknown
-						try {
-							json = JSON.parse(text)
-						} catch (e) {
-							ModalAlert.show(
-								'Ошибка формата JSON',
-								'Убедитесь, что он является валидным JSON файлом, ошибка: ' + e,
-								true,
-							)
-							return
-						}
-						if (
-							typeof json !== 'object' ||
-							!json ||
-							!('formatVersion' in json) ||
-							typeof json.formatVersion !== 'number'
-						)
-							return ModalAlert.show(
-								'Отсутствует версия в файле',
-								'Убедитесь что вы выбрали тот файл',
-								true,
-							)
-
-						if (json.formatVersion > currentFormatVersion)
-							return ModalAlert.show(
-								'Слишком новый файл',
-								`Ожидался файл версии ${currentFormatVersion}, получен ${json.formatVersion}`,
-							)
-
-						const validExport = json as ExportedUdnevkaSettingsFormat
-
-						if (
-							!('appVersion' in validExport) ||
-							!('storages' in validExport) ||
-							typeof validExport.appVersion !== 'string' ||
-							!Array.isArray(validExport.storages) ||
-							!validExport.storages.length
-						)
-							return ModalAlert.show(
-								'Отсутствуют нужные поля в файле',
-								'Убедитесь что файл не поврежден',
-								true,
-							)
-
-						const errors: string[] = []
-						for (const storage of validExport.storages) {
-							try {
-								if (!storage.content) continue
-
-								const store = [...PersistStoreMap.values()].find(
-									e => e.storageName === storage.id,
-								)
-								if (!store) {
-									errors.push('В этой версии нет хранилища ' + storage.id)
-									continue
-								}
-
-								if (!store) throw new Error('No store with id ' + storage.id)
-								setStorageValue(storage.id, storage.content)
-								store.hydrateStore()
-							} catch (e) {
-								errors.push(e + '')
-							}
-						}
-
-						ModalAlert.show(
-							'Готово!',
-							<Text>
-								Импортированы хранилища:{'\n'}
-								{validExport.storages.map(e => (
-									<Text key={e.id}>
-										{e.id} <Size t={e.content} />
-										{'\n'}
-									</Text>
-								))}
-								{errors.length ? `\n\nОшибки:\n${errors.join('\n')}` : ''}{' '}
-							</Text>,
-						)
-					} catch (e) {
-						ModalAlert.show('Ошибка', e + '', true)
-					}
-				}}
-			/>
-		</>
-	)
-})
-</file>
-
-<file path="src/screens/settings/colors/AccentColorPicker.tsx">
-import { Theme } from '@/models/theme'
-import { observer } from 'mobx-react-lite'
-import { memo } from 'react'
+<file path="src/screens/day/state.tsx">
+import { XSettings } from '@/models/settings'
+import { ScheduleStore } from '@/services/mgik/store'
+import { Spacings } from '@/utils/Spacings'
+import { autorun, makeAutoObservable } from 'mobx'
 import { View } from 'react-native'
-import { Divider, List } from 'react-native-paper'
-import ColorPicker, {
-	HueSlider,
-	Preview,
-	Swatches,
-} from 'reanimated-color-picker'
-
-export default observer(function AccentColorPicker() {
-	return (
-		<List.Section title="Акценты">
-			<List.Item title="Цвет акцентов"></List.Item>
-			<ColorPicker
-				style={{ width: '90%', alignSelf: 'center' }}
-				value={Theme.manage.getAccentColor()}
-				onComplete={color => Theme.manage.setAccentColor(color.hex)}
-			>
-				<ColorPickerPanel />
-				<Swatches colors={Theme.manage.getAccentColors()} />
-			</ColorPicker>
-			<List.Item
-				title={'Очистить использованные цвета'}
-				onPress={Theme.manage.clearSelectedAccentColors}
-				left={props => <List.Icon icon="delete" {...props}></List.Icon>}
-			></List.Item>
-		</List.Section>
-	)
-})
-// eslint-disable-next-line mobx/missing-observer
-const ColorPickerPanel = memo(function ColorPickerPanel() {
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	return [Preview, HueSlider].map((Element, i) => (
-		<View key={i.toString()}>
-			<Element />
-			<Divider style={{ margin: 8 }} />
-		</View>
-	))
-})
-</file>
-
-<file path="src/screens/settings/update/ReleaseBody.tsx">
-import { Theme } from '@/models/theme'
-import { memo } from 'react'
-import { Linking } from 'react-native'
 import { Text } from 'react-native-paper'
-
-// eslint-disable-next-line mobx/missing-observer
-export default memo(function ReleaseBody(props: { body: string }) {
-	let body = props.body
-
-	body = body.replace(/^## What's Changed/, '')
-
-	let fullchangelog: { versions: string; link: string } | undefined
-	const footerR = body.match(
-		/(\*\*Full Changelog\*\*: (https:\/\/github\.com\/[^/]+\/[^/]+\/compare\/([\d.]+...[\d.]+)))/,
-	)
-	if (footerR?.[1]) {
-		fullchangelog = { versions: footerR[3], link: footerR[2] }
-		body = body.replace(footerR[1], '')
-	}
-
-	body = body.replace(/\n?\*\s/g, '\n- ')
-
-	return (
-		<Text variant="bodyMedium">
-			<Text variant="titleMedium">Изменения:</Text>
-			<Text>
-				{body ||
-					'\nКак всегда, исправления ошибок и ускорение работы приложения'}
-			</Text>
-			{fullchangelog && (
-				<Text variant="titleSmall">
-					Все изменения:{' '}
-					<Text
-						style={{ color: Theme.colors.secondary }}
-						onPress={() => {
-							fullchangelog && Linking.openURL(fullchangelog.link)
-						}}
-					>
-						{fullchangelog.versions}
-					</Text>
-				</Text>
-			)}
-		</Text>
-	)
-})
-</file>
-
-<file path="src/screens/settings/update/state.ts">
-import * as FileSystem from 'expo-file-system/legacy'
-import { makeAutoObservable } from 'mobx'
-import { makeReloadPersistable } from '@/utils/makePersistable'
-
-class UpdateState {
-	progress: null | { i: number; bar?: number; version: string } = null
-	files: { uri: string; version: string }[] = []
-	downloader?: FileSystem.DownloadResumable
-	paused = false
-	currentI = 0
-
-	setProgress(progress: (typeof this)['progress']) {
-		this.progress = progress
-	}
-
-	constructor() {
-		makeAutoObservable(
-			this,
-			{ downloader: false, currentI: false },
-			{ autoBind: true },
-		)
-		makeReloadPersistable(this, { name: 'updates', properties: ['files'] })
-	}
-}
-
-export default new UpdateState()
-</file>
-
-<file path="src/screens/settings/update/utils.ts">
-import { GithubRelease } from '@/services/github/entities'
-import * as FileSystem from 'expo-file-system/legacy'
-import * as IntentLauncherAndroid from 'expo-intent-launcher'
-import * as ExpoSharing from 'expo-sharing'
-import { runInAction } from 'mobx'
-import { Platform } from 'react-native'
-import { Logger } from '../../../constants'
-import { RequestError } from '../../../utils/RequestError'
-import { ModalAlert } from '../../../utils/Toast'
-import State from './state'
-
-export const Filename = Platform.select({
-	ios: 'Udnevka.ipa',
-	android: __DEV__ ? 'Udnevka.Dev.Client.apk' : 'Udnevka.apk',
-})
-
-async function handleErrorsAndDisplayInModal(task: () => Promise<void>) {
-	try {
-		await task()
-	} catch (e) {
-		ModalAlert.show('Ошибка при установке', RequestError.stringify(e), true)
-		// eslint-disable-next-line no-console
-		console.error(e)
-	}
-}
-
-export function downloadUpdate(
-	i: number,
-	release: GithubRelease,
-	downloaded: boolean,
-) {
-	handleErrorsAndDisplayInModal(async () => {
-		if (!Filename) {
-			throw new Error('Обновление работает только в мобильном приложении.')
-		}
-
-		const version = release.name
-		const fileUrl = FileSystem.cacheDirectory + version + Filename
-		if (downloaded) return openInstaller(fileUrl)
-
-		const githubUrl = release.assets.find(
-			e => e.name === Filename,
-		)?.browser_download_url
-
-		if (!githubUrl) throw new Error('Нет файла, обновление еще собирается!')
-
-		State.setProgress({ i, version, bar: 0 })
-
-		let lastProgressSet = Date.now()
-		State.downloader = FileSystem.createDownloadResumable(
-			githubUrl,
-			fileUrl,
-			{},
-			p => {
-				const percent = p.totalBytesWritten / p.totalBytesExpectedToWrite
-				if (Date.now() - lastProgressSet > 500) {
-					lastProgressSet = Date.now()
-					State.setProgress({
-						i,
-						version,
-						bar: percent,
-					})
-				}
-			},
-		)
-
-		performDownload()
-	})
-}
-
-export function performDownload() {
-	handleErrorsAndDisplayInModal(async () => {
-		if (!State.downloader || !State.progress) return
-
-		const result =
-			await State.downloader[State.paused ? 'resumeAsync' : 'downloadAsync']()
-		if (result) {
-			runInAction(() => {
-				State.files.push({ uri: result.uri, version: State.progress!.version })
-				State.setProgress(null)
-
-				openInstaller(result.uri)
-			})
-		}
-	})
-}
-
-function openInstaller(fileUrl: string) {
-	return handleErrorsAndDisplayInModal(async () => {
-		if (Platform.OS === 'android') {
-			await IntentLauncherAndroid.startActivityAsync(
-				'android.intent.action.INSTALL_PACKAGE',
-				{
-					data: await FileSystem.getContentUriAsync(fileUrl),
-					flags: 1,
-				},
-			)
-		} else {
-			await ExpoSharing.shareAsync(fileUrl, {
-				UTI: '.ipa',
-				mimeType: 'application/octet-stream',
-			})
-			// const { status } = await Permissions.askAsync(
-			// 	Permissions.MEDIA_LIBRARY_WRITE_ONLY
-			// )
-			// if (status === 'granted') {
-			// 	const asset = await MediaLibrary.createAssetAsync(fileUri)
-			// 	const external = await MediaLibrary.createAlbumAsync(
-			// 		'Download',
-			// 		asset,
-			// 		false
-			// 	)
-			// 	await ExpoSharing.shareAsync(fileUri, {
-			// 		UTI: '.ipa',
-			// 		mimeType: 'application/octet-stream',
-			// 	})
-			// } else
-			// 	ModalAlert.alert(
-			// 		'Дайте разрешение',
-			// 		'Udnevka всего-лишь скачает один файл в папку Downloads и откроет для Вас проводник чтобы Вы могли обновить Udnevka и получить новейшие возможности.'
-			// 	)
-		}
-		Logger.info('App installer opened successfully')
-	})
-}
-</file>
-
-<file path="src/services/net-school/lesson.ts">
-import { Logger } from '@/constants'
-import type { StudentSettings } from '@/models/settings'
-import { makeAutoObservable } from 'mobx'
-import { NSEntity } from './entities'
-
-interface BaseLesson {
-	classmeetingId: number
-	studentId: number
-	assignmentId: number[]
-	order: number
-	scheduleTimeNumber: number
-	scheduleTimeRelay: number
-	subjectName: string
-	subjectId: number
-	subjectGroupId: number
-	startTime: string
-	endTime: string
-	teachers: NSEntity[]
-	lessonTheme: string
-	roomName: string
-	attachmentsExists: boolean
-	resultsExists: boolean
-	attendance: string | number | null
-	distanceMeetingId: number
-	addEducation: boolean
-	extraActivity: boolean
-}
-
-export interface RawLesson extends BaseLesson {
-	day: string
-}
-
-function toTime(...args: number[]) {
-	return (
-		args
-			// Hide hours if they are 0, e.g. seconds i is 2, mins i is 1, hrs i is 0
-			.filter((e, i) => (i === 0 ? e !== 0 : true))
-			.map(e => e.toString().padStart(2, '0'))
-			.join(':')
-	)
-}
-
-function toHours(ms: number) {
-	return Math.ceil(ms / (1000 * 60 * 60))
-}
-
-function toMinutes(ms: number) {
-	return Math.ceil(ms / (1000 * 60))
-}
-
-function separateTime(ms: number) {
-	const hours = toHours(ms)
-	const minutes = toMinutes(ms)
-	return {
-		hours: hours - 1,
-		minutes: 60 - (hours * 60 - minutes) - 1,
-		seconds: 60 - (minutes * 60 - Math.ceil(ms / 1000)) - 1,
-	}
-}
-
-export enum LessonState {
-	NotStarted,
-	Going,
-	Ended,
-}
-
-function getLessonOverridenDate(
-	studentSettings: StudentSettings,
-	offsetId: number,
-	date: ReadonlyDate,
-	dayId: string,
-	access: string,
-) {
-	const lessonOrder = studentSettings.lessonOrder[offsetId] ?? {}
-	try {
-		const offset = lessonOrder?.[dayId]
-		if (offset) {
-			const newDate = new Date(date.getTime() + offset)
-			// debug(
-			// 	'Applied offset',
-			// 	access,
-			// 	offset,
-			// 	'to a',
-			// 	subjectId,
-			// 	'date',
-			// 	newDate.toReadable(),
-			// )
-			return newDate
-		}
-	} catch (e) {
-		Logger.warn(
-			'Unable to get lesson overriden date:',
-			!!studentSettings,
-			offsetId,
-			!!lessonOrder,
-			e,
-		)
-	}
-
-	return date
-}
-/**
- * Class representing one lesson
- */
-
-export class Lesson {
-	classmeetingId: number
-	studentId: number
-	assignmentId: number[]
-	order: number
-	scheduleTimeNumber: number
-	scheduleTimeRelay: number
-	subjectName: string
-	subjectId: number
-	subjectGroupId: number
-	teachers: NSEntity[]
-	lessonTheme: string
-	roomName: string
-	distanceMeetingId: number = 0
-	attachmentsExists: boolean
-	resultsExists: boolean
-	attendance: string | number | null
-	addEducation: boolean
-	extraActivity: boolean
-	endDate: ReadonlyDate
-	startDate: ReadonlyDate
-	dayDate: ReadonlyDate
-
-	isIgnored(studentSettings: StudentSettings) {
-		return studentSettings.ignoreLessons?.includes(this.offsetDayId)
-	}
-
-	get offsetId() {
-		return this.dayDate.getDay()
-	}
-
-	get dayId() {
-		return `${this.order}${this.subjectId}`
-	}
-
-	get offsetDayId() {
-		return `${this.offsetId}${this.order}${this.subjectId}`
-	}
-
-	start(studentSettings: StudentSettings): ReadonlyDate {
-		if (this.isCustom) return this.startDate
-		return getLessonOverridenDate(
-			studentSettings,
-			this.offsetId,
-			this.startDate,
-			this.dayId,
-			'start',
-		)
-	}
-
-	day(studentSettings: StudentSettings) {
-		if (this.isCustom) return this.dayDate
-		return this.start(studentSettings)
-	}
-
-	end(studentSettings: StudentSettings): ReadonlyDate {
-		if (this.isCustom) return this.endDate
-		return getLessonOverridenDate(
-			studentSettings,
-			this.offsetId,
-			this.endDate,
-			this.dayId,
-			'end',
-		)
-	}
-
-	/**
-	 * Creates new lesson
-	 * @param lesson - Raw lesson got from fetch response
-	 */
-	constructor(
-		lesson: RawLesson,
-		public readonly isCustom = false,
-		public readonly notifyBeforeSeconds = 15 * 60,
-	) {
-		const { endTime, startTime, day, ...ours } = lesson
-		Object.assign(this, ours)
-
-		/**
-		 * Start date of the lesson
-		 */
-		this.startDate = new Date(startTime)
-		/**
-		 * End date of the lesson
-		 */
-		this.endDate = new Date(endTime)
-		/**
-		 * Day date of the lesson
-		 */
-		this.dayDate = new Date(day)
-
-		makeAutoObservable(this, {
-			end: false,
-			start: false,
-			offsetId: false,
-			dayId: false,
-			offsetDayId: false,
-		})
-	}
-
-	static status(start: number, end: number, now = Date.now()) {
-		const beforeStartMs = start - now
-		const beforeStart = separateTime(beforeStartMs)
-		const beforeEnd = separateTime(now - start)
-		const total = separateTime(end - start)
-		const progress = 100 - Math.ceil(((end - now) * 100) / (end - start))
-
-		return {
-			beforeStartMs: beforeStartMs,
-			startsAfter: `Начнется через ${toTime(beforeStart.hours, beforeStart.minutes, beforeStart.seconds)}`,
-			elapsed: `${total.hours >= 1 ? toTime(0, beforeEnd.hours, beforeEnd.minutes + 1) : toTime(beforeEnd.hours, beforeEnd.minutes + 1)}/${toTime(...(total.minutes + 1 >= 60 ? [total.hours + 1, 0] : [total.hours, total.minutes + 1]))}`,
-			remaining: toTime(
-				total.hours - beforeEnd.hours,
-				total.minutes - beforeEnd.minutes,
-				total.seconds - beforeEnd.seconds,
-			),
-			progress,
-			state:
-				now < start
-					? LessonState.NotStarted
-					: now <= end
-						? LessonState.Going
-						: LessonState.Ended,
-		}
-	}
-}
-</file>
-
-<file path="src/screens/settings/colors/Appearance.tsx">
-import Loading from '@/components/Loading'
-import NumberInputSetting from '@/components/NumberInput'
-import SelectModal from '@/components/SelectModal'
-import SwitchSetting from '@/components/SwitchSetting'
-import { XSettings } from '@/models/settings'
-import { Theme } from '@/models/theme'
-import { runInAction } from 'mobx'
-import { observer } from 'mobx-react-lite'
-import { Suspense, lazy } from 'react'
-import { ScrollView, View } from 'react-native'
-import { Button, Divider, List, Surface, Text } from 'react-native-paper'
-import { globalStyles } from '../../../constants'
-import { Spacings } from '../../../utils/Spacings'
-import { ModalAlert, Toast } from '../../../utils/Toast'
-
-const themes = [
-	{ label: 'Системная', value: 'system' as const },
-	{ label: 'Темная', value: 'dark' as const },
-	{ label: 'Светлая', value: 'light' as const },
-]
-
-const nameFormat = [
-	{ label: 'ФИО', value: 'fio' as const },
-	{ label: 'ИФО', value: 'ifo' as const },
-]
-
-export default observer(function AppearanceSettings_() {
-	return (
-		<ScrollView>
-			<List.Section title="Общие">
-				<SelectModal
-					label="Тема"
-					data={themes}
-					value={Theme.manage.getScheme()}
-					onSelect={({ value }) => Theme.manage.setScheme(value)}
-				/>
-
-				<SelectModal
-					label="Порядок Фамилии Имени Отчества"
-					value={XSettings.nameFormat}
-					data={nameFormat}
-					onSelect={({ value }) => XSettings.save({ nameFormat: value })}
-				/>
-
-				<View style={{ paddingHorizontal: Spacings.s2 }}>
-					<NumberInputSetting
-						label="Округлость"
-						value={Theme.roundness}
-						defaultValue={5}
-						onChange={value => runInAction(() => (Theme.roundness = value))}
-					/>
-				</View>
-			</List.Section>
-			<Divider style={{ margin: Spacings.s1 }} />
-
-			<List.Section title="Дневник">
-				<SwitchSetting
-					title="Сворачивать длинный текст заданий"
-					setting="collapseLongAssignmentText"
-				/>
-				<SwitchSetting
-					title="Использовать календарь для выбора даты"
-					setting="newDatePicker"
-				/>
-			</List.Section>
-			<Divider style={{ margin: Spacings.s1 }} />
-
-			<Suspense fallback={<Loading />}>
-				<AsyncAccentColorPicker />
-			</Suspense>
-			<Divider style={{ margin: Spacings.s1 }} />
-			{/* {__DEV__ && <DevSettings />} */}
-		</ScrollView>
-	)
-})
-
-const DevSettings = observer(function DevSettings() {
-	return (
-		<Surface elevation={1} style={{ borderRadius: Theme.roundness }}>
-			<Button onPress={() => Toast.show({ title: 'Проверка', timeout: 10000 })}>
-				Проверить тост
-			</Button>
-			<Button
-				onPress={() =>
-					Toast.show({
-						title: 'Проверка',
-						body: 'Тоста с обычно очень очень очень длинным текстом что аж жесть',
-						error: true,
-					})
-				}
-			>
-				Проверить тост ошибку
-			</Button>
-			<Button onPress={() => ModalAlert.show('Проверка')}>
-				Проверить модал
-			</Button>
-			<Button
-				onPress={() =>
-					ModalAlert.show(
-						'Проверка',
-						'Тоста с обычно очень очень очень длинным текстом что аж жесть',
-						true,
-					)
-				}
-			>
-				Проверить модал ошибку
-			</Button>
-			<ThemePreview />
-		</Surface>
-	)
-})
-
-const ThemePreview = observer(function ThemePreview() {
-	return (
-		<View key={Theme.key}>
-			{Object.entries(Theme.colors)
-				.sort((a, b) => a[0].localeCompare(b[0]))
-				.map(([key, value]) => {
-					if (typeof value === 'string')
-						return (
-							<View
-								style={[
-									globalStyles.stretch,
-									{
-										padding: 0,
-										paddingHorizontal: Spacings.s1,
-										margin: 0,
-									},
-								]}
-								key={key}
-							>
-								<Text>{key}</Text>
-								<View
-									style={{
-										backgroundColor: value,
-										padding: Spacings.s3,
-										width: '30%',
-										margin: 0,
-									}}
-								></View>
-							</View>
-						)
-				})
-				.filter(Boolean)}
-		</View>
-	)
-})
-
-const AsyncAccentColorPicker = lazy(() => import('./AccentColorPicker'))
-</file>
-
-<file path="src/screens/settings/notifications/Notifications.tsx">
-import SwitchSetting from '@/components/SwitchSetting'
-import { XSettings } from '@/models/settings'
-import { Theme } from '@/models/theme'
-import {
-	checkForNewMarksAndNotify,
-	MarksNotificationStore,
-} from '@/services/notifications/marks'
-import { Spacings } from '@/utils/Spacings'
-import { ModalAlert } from '@/utils/Toast'
-import notifee from '@notifee/react-native'
-import { StackScreenProps } from '@react-navigation/stack'
-import * as TaskManager from 'expo-task-manager'
-import { observer } from 'mobx-react-lite'
-import { useEffect, useRef, useState } from 'react'
-import { Linking, ScrollView, View } from 'react-native'
-import { Button, HelperText, List, Text } from 'react-native-paper'
-import { SettingsRoutes } from '../navigation'
-
-function usePromise<T>(promise: () => Promise<T>) {
-	const [state, setState] = useState<T | undefined>(undefined)
-
-	const interval = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-	useEffect(() => {
-		if (interval.current) clearInterval(interval.current)
-		interval.current = setInterval(() => {
-			promise().then(e => {
-				if (state !== e) setState(e)
-			})
-		}, 2000)
-	})
-
-	return state
-}
-
-const checkForNewMarks = checkForNewMarksAndNotify.bind(
-	undefined,
-	'Запрос пользователя',
-)
-
-export default observer(function Notifications(
-	props: StackScreenProps<SettingsRoutes>,
-) {
-	const batteryOptimizations = !!usePromise(() =>
-		notifee.isBatteryOptimizationEnabled(),
-	)
-	const powerManager = !!usePromise(() =>
-		notifee.getPowerManagerInfo().then(e => e.activity),
-	)
-	const taskManager = !usePromise(() => TaskManager.isAvailableAsync())
-
-	return (
-		<ScrollView>
-			<List.Section title="Общие">
-				<SwitchSetting
-					title={'Включены ли уведомления'}
-					setting="notificationsEnabled"
-				/>
-
-				<SwitchSetting
-					title={'Расписание уроков'}
-					description="Уведомления о текущих уроках"
-					setting="lessonNotifications"
-					disabled={!XSettings.notificationsEnabled}
-				/>
-
-				<SwitchSetting
-					title={'Новые оценки'}
-					description="Уведомления о новых оценках"
-					setting="marksNotifications"
-					disabled={!XSettings.notificationsEnabled}
-				/>
-			</List.Section>
-			<View style={{ padding: Spacings.s2, gap: Spacings.s2 }}>
-				{(batteryOptimizations || powerManager || taskManager) && (
-					<HelperText type="error">Уведомления могут не работать</HelperText>
-				)}
-				<Warning
-					enabled={batteryOptimizations}
-					label="Оптимизация батареи"
-					description="Включена оптимизация батареи. Система выключит приложение и уведомления перестанут работать"
-					onPress={notifee.openBatteryOptimizationSettings}
-				/>
-				{powerManager && (
-					<Warning
-						enabled={true}
-						label="Менеджер питания"
-						description="Включен менеджер питания. Система выключит приложение и уведомления перестанут работать."
-						onPress={notifee.openPowerManagerSettings}
-					/>
-				)}
-				{taskManager && (
-					<Warning
-						enabled={true}
-						label="Фоновые задачи выключены"
-						description="Уведомления об оценках не будут работать"
-						onPress={() => {}}
-					/>
-				)}
-				<Button
-					mode="elevated"
-					onPress={() => MarksNotificationStore.clearNotified()}
-				>
-					Очистить список оценок о которых уже было уведомление
-				</Button>
-				<Button
-					mode="elevated"
-					onPress={async () =>
-						ModalAlert.show(
-							'Задачи',
-							(await TaskManager.getRegisteredTasksAsync())
-								.map(
-									e =>
-										e.taskName +
-										' ' +
-										e.taskType +
-										' ' +
-										JSON.stringify(e.options),
-								)
-								.join('\n'),
-						)
-					}
-				>
-					Список фоновых задач
-				</Button>
-				<Button mode="elevated" onPress={Linking.openSettings}>
-					Системные настройки приложения
-				</Button>
-			</View>
-			<NotificationLogs />
-		</ScrollView>
-	)
-})
-
-export const NotificationLogs = observer(function NotificationLogs() {
-	const [logs, setLogs] = useState(false)
-
-	return (
-		<View style={{ marginBottom: Spacings.s3 }}>
-			<View style={{ padding: Spacings.s2, gap: Spacings.s2 }}>
-				<Button mode="elevated" onPress={checkForNewMarks}>
-					Проверить наличие новых оценок
-				</Button>
-				<Button mode="elevated" onPress={() => setLogs(!logs)}>
-					Логи уведомлений об оценках
-				</Button>
-				{logs && (
-					<Button
-						mode="elevated"
-						onPress={() => MarksNotificationStore.clearLogs()}
-					>
-						Очистить логи
-					</Button>
-				)}
-				{logs && (
-					<Text style={{ padding: Spacings.s1 }} selectable>
-						{MarksNotificationStore.logs.join('\n')}
-					</Text>
-				)}
-			</View>
-		</View>
-	)
-})
-
-const Warning = observer(function Warning(props: {
-	enabled: boolean
-	onPress: VoidFunction
-	description: string
-	label: string
-}) {
-	return (
-		<>
-			<Button
-				mode="elevated"
-				{...(props.enabled ? Theme.destructiveButton : {})}
-				onPress={props.onPress}
-			>
-				{props.label}
-			</Button>
-			{props.enabled && (
-				<HelperText type="error">{props.description}</HelperText>
-			)}
-		</>
-	)
-})
-</file>
-
-<file path="src/screens/settings/update/micro-update.tsx">
-import { Theme } from '@/models/theme'
-import { Spacings } from '@/utils/Spacings'
-import { ModalAlert } from '@/utils/Toast'
-import * as Updates from 'expo-updates'
-import { observer } from 'mobx-react-lite'
-import { useEffect, useRef, useState } from 'react'
-import { View } from 'react-native'
-import { Button, HelperText, Text, TouchableRipple } from 'react-native-paper'
-
-export default observer(function MicroUpdateId() {
-	const updateId = Updates.updateId?.slice(-6) ?? 'из сборки'
-	const { isUpdateAvailable } = Updates.useUpdates()
-
-	const update = isUpdateAvailable
-
-	const text = (
-		<Text
-			onPress={openModal}
-			style={{
-				color: update ? Theme.colors.error : Theme.colors.onSecondaryContainer,
-
-				fontWeight: update ? 'bold' : 'normal',
-			}}
-		>
-			{update && 'Обновление: '}
-			{updateId}
-		</Text>
-	)
-
-	if (update)
-		return (
-			<TouchableRipple
-				onPress={openModal}
-				style={{
-					backgroundColor: Theme.colors.errorContainer,
-					paddingVertical: 2,
-					paddingHorizontal: 8,
-					borderRadius: Theme.roundness,
-				}}
-			>
-				{text}
-			</TouchableRipple>
-		)
-	return text
-})
-
-enum UpdateCheckState {
-	Default,
-	NotAvailable,
-	Available,
-	Error,
-}
-
-const states: Record<UpdateCheckState, string> = {
-	[UpdateCheckState.Default]: 'Проверить наличие микрообновлений',
-	[UpdateCheckState.Error]: 'Ошибка',
-	[UpdateCheckState.Available]: 'Проверить наличие микрообновлений',
-	[UpdateCheckState.NotAvailable]: 'Нет обновлений',
-}
-
-const openModal = () => ModalAlert.show('Микрообновления', <MicroUpdateModal />)
-
-const MicroUpdateModal = observer(function MicroUpdateModal() {
-	const { currentlyRunning, isUpdateAvailable, isUpdatePending } =
-		Updates.useUpdates()
-
-	useEffect(() => {
-		if (isUpdatePending) {
-			// Update has successfully downloaded
-			Updates.reloadAsync()
-		}
-	}, [isUpdatePending])
-
-	// Show whether or not we are running embedded code or an update
-	const runTypeMessage = currentlyRunning.isEmbeddedLaunch
-		? 'Запущено из сборки'
-		: 'Запущено из микрообновления'
-
-	const [state, setState] = useState(UpdateCheckState.Default)
-
-	const timeout = useRef<number | undefined>(undefined)
-	useEffect(() => {
-		if (timeout.current) clearTimeout(timeout.current)
-		if (state !== UpdateCheckState.Default) {
-			timeout.current = setTimeout(
-				() => setState(UpdateCheckState.Default),
-				5000,
-			) as unknown as number
-		}
-	}, [state])
-
-	async function wrap<T>(promise: Promise<T>, onResolve: (t: T) => void) {
-		try {
-			onResolve(await promise)
-		} catch (e) {
-			setState(UpdateCheckState.Error)
-		}
-	}
-
-	return (
-		<View style={{ gap: Spacings.s2 }}>
-			<Text>{runTypeMessage}</Text>
-			{!isUpdateAvailable ? (
-				<Button
-					onPress={() =>
-						wrap(Updates.checkForUpdateAsync(), e =>
-							setState(
-								e.isAvailable
-									? UpdateCheckState.Available
-									: UpdateCheckState.NotAvailable,
-							),
-						)
-					}
-					style={{ backgroundColor: Theme.colors.secondaryContainer }}
-				>
-					<HelperText type="info">{states[state]}</HelperText>
-				</Button>
-			) : (
-				<Button
-					style={{ backgroundColor: Theme.colors.secondaryContainer }}
-					onPress={() =>
-						wrap(Updates.fetchUpdateAsync(), result => {
-							if (result.isNew || result.isRollBackToEmbedded) {
-								setState(UpdateCheckState.Available)
-								Updates.reloadAsync()
-							} else {
-								setState(UpdateCheckState.NotAvailable)
-							}
-						})
-					}
-				>
-					<HelperText type="info">Скачать и запустить микрообнову</HelperText>
-				</Button>
-			)}
-		</View>
-	)
-})
-</file>
-
-<file path="src/models/settings.ts">
-import { HoursMinutes } from '@/components/SelectTime'
-import { Logger } from '@/constants'
-import { NSEntity } from '@/services/net-school/entities'
-import { StudentsStore } from '@/services/net-school/store'
-import { makeAutoObservable, runInAction } from 'mobx'
-import { Platform } from 'react-native'
-import { makeReloadPersistable } from '../utils/makePersistable'
-
-export interface CustomSubjectMeeting {
-	dayIndex: number
-	startTime: HoursMinutes
-	time: number
-	sendNotificationBeforeMins: number
-}
-
-export interface CustomSubject {
-	name: string
-	meetings: CustomSubjectMeeting[]
-}
-
-export interface StudentSettings {
-	/**
-	 * Map containing subjectIds as keys and overrided subjectName as value
-	 */
-	subjectNames: Record<string, string | undefined>
-
-	/**
-	 * Map containing days as keys and map of lesson.localOverrideId as keys and overriden subjectNames as value
-	 */
-	subjectNamesDay: Record<string, string | undefined>
-
-	customSubjects: CustomSubject[]
-
-	lessonOrder: Record<number, Record<string, number> | undefined>
-	subjectAttestation: Record<string, number>
-	defaultAttestation: number
-
-	/**
-	 * Current term of the student
-	 */
-	currentTermv2?: NSEntity
-
-	targetMark?: number
-	defaultMark?: number
-	defaultMarkWeight?: number
-
-  ignoreLessons?: string[]
-}
-
-class SettingsStore {
-	studentIndex = 0
-
-	notificationsEnabled = Platform.select({
-		android: true,
-
-		default: false,
-	})
-
-	lessonNotifications = true
-	marksNotifications = true
-
-	nameFormat: 'fio' | 'ifo' = 'ifo'
-	currentTotalsOnly = false
-	markStyle: 'background' | 'border' = 'background'
-	// showMarkWeightTip = true
-	collapseLongAssignmentText = false
-	targetMarkCompact = false
-
-	newDatePicker = true
-
-	markRoundAdd = -0.1
-
-	overrideTimeD = Date.now()
-	useOverrideTime = false
-
-	/**
-	 * Map containing per student overrides
-	 */
-	studentOverrides: Record<string, StudentSettings | undefined> = {}
-
-	get studentId() {
-		const student =
-			StudentsStore.result && StudentsStore.result[XSettings.studentIndex]
-		if (student) return student.studentId
-	}
-
-	forStudent(id: number): StudentSettings {
-		const defaultValue: StudentSettings = {
-			subjectNames: {},
-			lessonOrder: {},
-			subjectNamesDay: {},
-			customSubjects: [],
-			subjectAttestation: {},
-			defaultAttestation: 0,
-		}
-		const overrides = this.studentOverrides[id]
-
-		if (overrides) {
-			runInAction(() => {
-				for (const [k, v] of Object.entries(defaultValue)) {
-					overrides[k as keyof StudentSettings] ??= v
-				}
-			})
-			return overrides
-		} else {
-			runInAction(() => (this.studentOverrides[id] = defaultValue))
-
-			const overrides = this.studentOverrides[id]
-			if (overrides) {
-				return overrides
-			} else {
-				Logger.warn(new Error('Overrides are UNDEFINED.'))
-				return defaultValue
-			}
-		}
-	}
-
-	forStudentOrThrow() {
-		const { studentId } = this
-		if (!studentId)
-			throw new TypeError(
-				'Unable to get settings for student: StudentID is undefined!',
-			)
-		return this.forStudent(studentId)
-	}
-
-	constructor() {
-		makeAutoObservable(this, {
-			forStudent: false,
-			forStudentOrThrow: false,
-			fullname: false,
-			studentId: false,
-		})
-
-		const clearOverrides = (value: this['studentOverrides']) => {
-			runInAction(() => {
-				for (const override of Object.values(value)) {
-					if (override) Reflect.deleteProperty(override, 'save')
-				}
-			})
-
-			return value
-		}
-
-		makeReloadPersistable(this, {
-			name: 'settings',
-			properties: [
-				...(Object.keys(this) as unknown as (keyof this)[]).filter(
-					e => typeof this[e] !== 'function' && e !== 'studentOverrides',
-				),
-				{
-					key: 'studentOverrides',
-					deserialize: clearOverrides,
-					serialize: clearOverrides,
-				},
-			],
-		})
-	}
-
-	save(value: Partial<Omit<this, 'save'>>) {
-		Object.assign(this, value)
-	}
-
-	fullname(name: string) {
-		if (this.nameFormat === 'ifo') {
-			const parts = name.split(' ')
-			return [parts[1], parts[2], parts[0]].join(' ')
-		} else {
-			return name
-		}
-	}
-}
-
-export const XSettings = new SettingsStore() as Readonly<SettingsStore>
-</file>
-
-<file path="src/services/notifications/lesson.ts">
-import { getSubjectName } from '@/components/SubjectName'
-import { Logger } from '@/constants'
-import { StudentSettings, XSettings } from '@/models/settings'
-import { Lesson, LessonState } from '@/services/net-school/lesson'
-import { NotifyDiaryStore } from '@/services/net-school/store'
-import {
-	clearBackgroundInterval,
-	setBackgroundInterval,
-} from '@/utils/backgroundIntervals'
-import notifee, {
-	AndroidImportance,
-	AndroidVisibility,
-} from '@notifee/react-native'
-import { autorun, makeAutoObservable, runInAction } from 'mobx'
-import { MarksNotificationStore } from './marks'
-
-let foregroundServiceRegistered = false
-
-export const LessonNotifStore = new (class {
-	constructor() {
-		makeAutoObservable(this)
-	}
-
-	lessonChannelId = ''
-
-	/**
-	 * Current notification id
-	 */
-	id: undefined | string = undefined
-
-	currentLesson: undefined | string = undefined
-
-	day = new Date().getDate()
-
-	async remove(id = LessonNotifStore.id) {
-		if (!id) return
-
-		if (foregroundServiceRegistered) {
-			await notifee.stopForegroundService()
-		} else await notifee.cancelDisplayedNotification(id)
-
-		runInAction(() => {
-			if (LessonNotifStore.id) LessonNotifStore.id = undefined
-		})
-	}
-})()
-
-function enabled() {
-  const {notificationsEnabled, lessonNotifications} = XSettings
-	return notificationsEnabled && lessonNotifications
-}
-
-export async function setupLessonChannel() {
-	// Show notification channels even when they are disabled
-	const lessonChannelId = await notifee.createChannel({
-		id: 'lessons',
-		name: 'Уроки',
-		importance: AndroidImportance.HIGH,
-		visibility: AndroidVisibility.PUBLIC,
-		description: 'Уведомления о текущих уроках',
-	})
-
-	const oldNotification = (await notifee.getDisplayedNotifications()).find(
-		e => e.notification.android?.channelId === lessonChannelId,
-	)
-
-	if (!enabled()) {
-		return runInAction(() => {
-			LessonNotifStore.remove(LessonNotifStore.id || oldNotification?.id)
-		})
-	}
-
-	runInAction(() => {
-		LessonNotifStore.lessonChannelId = lessonChannelId
-		if (oldNotification?.id) LessonNotifStore.id = oldNotification.id
-	})
-}
-
-type NotifLesson = {
-	start: ReadonlyDate
-	end: ReadonlyDate
-} & Readonly<
-	Pick<
-		Lesson,
-		| 'notifyBeforeSeconds'
-		| 'roomName'
-		| 'subjectId'
-		| 'classmeetingId'
-		| 'subjectName'
-		| 'offsetDayId'
-	>
->
-
-function lessonToNotifLesson(
-	lesson: Lesson,
-	settings: StudentSettings,
-): NotifLesson {
-	return {
-		start: lesson.start(settings),
-		end: lesson.end(settings),
-		notifyBeforeSeconds: lesson.notifyBeforeSeconds,
-		roomName: lesson.roomName,
-		subjectId: lesson.subjectId,
-		classmeetingId: lesson.classmeetingId,
-		subjectName: lesson.subjectName,
-		offsetDayId: lesson.offsetDayId,
-	}
-}
-
-let currentLessonInterval: ReturnType<typeof setBackgroundInterval>
-autorun(function notificationFromDiary() {
-	if (currentLessonInterval) clearBackgroundInterval(currentLessonInterval)
-	if (!enabled() || !LessonNotifStore.lessonChannelId) {
-		return LessonNotifStore.remove()
-	}
-
-	const { studentId, overrideTimeD, useOverrideTime } = XSettings
-
-	const date = new Date(useOverrideTime ? overrideTimeD : Date.now())
-	const week = Date.week(date)
-
-	NotifyDiaryStore.withParams({
-		studentId,
-		startDate: week[0].toNetSchool(),
-		endDate: week[6].toNetSchool(),
-	})
-
-	const { result } = NotifyDiaryStore
-	if (!result) return
-
-	const studentSettings = XSettings.forStudentOrThrow()
-	const lessons = result
-		.forDay(date.toYYYYMMDD(), studentSettings)
-		.map(lesson => lessonToNotifLesson(lesson, studentSettings))
-
-	LessonNotifStore.day
-
-	const inter = setBackgroundInterval(
-		() =>
-			runInAction(async () => {
-				if (inter !== currentLessonInterval) return
-
-				const now = useOverrideTime ? overrideTimeD : Date.now()
-
-				// just to trigger rerun of the code above and use custom subjects for new day
-				LessonNotifStore.day = new Date().getDate()
-
-				for (const [i, lesson] of lessons.entries()) {
-					try {
-						const end = lesson.end.getTime()
-						if (!end) continue // Broken data i guess
-						if (end < now) continue // Already was
-
-						// period - перемена
-						const previous = lessons[i - 1]
-						const { date, period } = getLessonPeriod(previous, lesson)
-						if (date.getTime() > now) continue
-
-						return await showNotification(lesson, now, period)
-					} catch (e) {
-						Logger.error(e)
-					}
-				}
-
-				// Nothing to show
-				LessonNotifStore.remove()
-			}),
-		1000,
-	)
-	currentLessonInterval = inter
-})
+import { LANG, globalStyles } from '../../constants'
+import { Theme } from '../../models/theme'
+import { makeReloadPersistable } from '../../utils/makePersistable'
 
 const second = 1000
+const minute = second * 60
+const hour = minute * 60
+const day = hour * 24
 
-function getLessonPeriod(
-	previous: NotifLesson | undefined,
-	current: NotifLesson,
-) {
-	let period: Date | undefined
-	let date: Date
-	const notifyBeforeSeconds = current.notifyBeforeSeconds
-
-	// If previous lesson is in the same day, send notification in the end of the lesson
-	if (
-		previous &&
-		current.start.toYYYYMMDD() === previous.start.toYYYYMMDD() &&
-		// Only when delay between lessons is less then 15
-		(current.start.getTime() - previous.end.getTime()) / second <=
-			notifyBeforeSeconds
-	) {
-		date = new Date(previous.end.getTime())
-		// date.setMinutes(date.getMinutes() + 1)
-		period = new Date(current.start.getTime() - previous.end.getTime())
-	} else {
-		// Send before lesson
-		date = new Date(current.start.getTime())
-		date.setMinutes(date.getMinutes() - ~~(notifyBeforeSeconds / 60))
+export const DiaryState = new (class {
+	constructor() {
+		makeAutoObservable<this, 'weekOffset'>(this, {
+			weekOffset: false,
+		})
+		makeReloadPersistable(this, {
+			name: 'diary',
+			properties: ['showHomework', 'showAttachments', 'showLessonTheme'],
+		})
 	}
-	return { date, period }
+
+	day = new Date().toYYYYMMDD()
+	week = new Date()
+
+	showHomework = false // no assignments now
+	showAttachments = false // no attachments
+	showLessonTheme = true
+
+	get weekDays() {
+		return Date.week(this.week)
+	}
+
+	private weekOffset(daysOffset: number) {
+		return new Date(this.week.getTime() + daysOffset * day)
+	}
+	get weekBefore() {
+		return this.weekOffset(-7)
+	}
+	get weekAfter() {
+		return this.weekOffset(7)
+	}
+	get weekDaysDropdown() {
+		const today = new Date()
+		const todayWeek = Date.week(today)
+		const todayString = today.toYYYYMMDD()
+		return [
+			this.weekDays[0].toYYYYMMDD() === todayWeek[0].toYYYYMMDD()
+				? null
+				: {
+						label: <DayRenderer day={today} i={0} />,
+						value: todayString + '$TODAY',
+						week: todayWeek[0],
+					},
+			weekValue('Прошлая неделя', this.weekBefore),
+			...this.weekDays.map((day, i) => ({
+				label: <DayRenderer day={day} i={i} />,
+				value: day.toYYYYMMDD(),
+			})),
+			weekValue('Следующая неделя', this.weekAfter),
+		].filter(e => !!e)
+	}
+})()
+
+autorun(() => {
+	const { selectedGroup } = XSettings
+	if (!selectedGroup) return
+
+	ScheduleStore.withParams({
+		idGroup: selectedGroup,
+		isDo: undefined,
+	})
+
+	// ScheduleStore will fetch all schedule for the group; we can filter by week
+})
+
+function weekValue(text: string, week: Date) {
+	const day = Date.week(week)[0].toYYYYMMDD()
+	return {
+		label: `${text} (${day})`,
+		value: day,
+		week: week,
+	}
 }
 
-async function showNotification(
-	lesson: NotifLesson,
-	now: number,
-	period: Date | undefined,
-) {
-	const lessonId = lesson.classmeetingId + '' + lesson.subjectId
-	const lessonName = getSubjectName(lesson)
-
-	const { state, startsAfter, progress, elapsed, remaining } = Lesson.status(
-		lesson.start.getTime(),
-		lesson.end.getTime(),
-		now,
+// eslint-disable-next-line mobx/missing-observer
+function DayRenderer({ day, i }: { day: Date; i: number }) {
+	const today = new Date().toYYYYMMDD() === day.toYYYYMMDD()
+	const dayName = LANG.days[i]
+	return today ? (
+		<Text style={{ fontWeight: 'bold', color: Theme.colors.primary }}>
+			{dayName}, cегодня
+		</Text>
+	) : (
+		<View
+			style={[
+				{
+					margin: Spacings.s1,
+					width: '90%',
+					flex: 1,
+				},
+				globalStyles.stretch,
+			]}
+		>
+			<Text style={{ fontWeight: 'bold' }}>{dayName}</Text>
+			<Text>
+				{'  '}
+				{day.toYYYYMMDD()}
+			</Text>
+		</View>
 	)
-
-	let title = ''
-	title += lessonName
-	if (state === LessonState.Going) {
-		title += ' | '
-		title += remaining
-	}
-	if (lesson.roomName) {
-		title += ' | '
-		title += lesson.roomName ?? 'Нет кабинета'
-	}
-
-	let body = ''
-
-	body += `${lesson.start.toHHMM()} - ${lesson.end.toHHMM()}. `
-	if (state === LessonState.NotStarted) {
-		body += startsAfter
-		if (period) body += ` Перемена ${period.getMinutes()} мин. `
-	} else if (state === LessonState.Going) {
-		body += `Прошло ${elapsed}`
-	}
-
-	try {
-		if (!foregroundServiceRegistered) {
-			notifee.registerForegroundService(() => new Promise(() => {}))
-			foregroundServiceRegistered = true
-		}
-	} catch {
-		MarksNotificationStore.log(
-			'error',
-			'Не удалось зарегистрировать сервис ПОСТОЯННЫХ уведомлений. Могут быть перебои в работе.',
-		)
-	}
-
-	const notificationId = await notifee.displayNotification({
-		...(LessonNotifStore.id ? { id: LessonNotifStore.id } : {}),
-		title,
-		body,
-		android: {
-			channelId: LessonNotifStore.lessonChannelId,
-			ongoing: true,
-			smallIcon: 'notification_icon',
-
-			// only alert when lesson notification
-			onlyAlertOnce: LessonNotifStore.currentLesson === lessonId,
-			asForegroundService: foregroundServiceRegistered,
-
-			progress:
-				state === LessonState.Going
-					? {
-							current: progress,
-							max: 100,
-						}
-					: void 0,
-			pressAction: { id: 'default' },
-		},
-		ios: {},
-	})
-
-	runInAction(() => {
-		LessonNotifStore.id = notificationId
-		LessonNotifStore.currentLesson = lessonId
-	})
 }
+
+export const DAY_NAMES_SHORT = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
+</file>
+
+<file path="src/utils/backgroundIntervals.ts">
+import BackgroundTimer from '@boterop/react-native-background-timer'
+
+interface Timer {
+	fn: VoidFunction
+	delay: number
+}
+
+const timers = new Set<Timer>()
+
+export function setBackgroundInterval(fn: VoidFunction, delay: number) {
+	const timer: Timer = { fn, delay }
+	timers.add(timer)
+
+	return timer
+}
+
+export function clearBackgroundInterval(timer: Timer) {
+	timers.delete(timer)
+}
+
+let elapsedTime = 0
+const delay = 1000
+
+BackgroundTimer.runBackgroundTimer(() => {
+	for (const timer of timers) {
+		if (elapsedTime % timer.delay === 0) timer.fn()
+	}
+
+	elapsedTime += delay
+}, delay)
 </file>
 
 <file path="src/screens/day/Day.tsx">
-import { XSettings } from '@/models/settings'
-import { DiaryStore } from '@/services/net-school/store'
+import { ScheduleStore } from '@/services/mgik/store'
 import { observer } from 'mobx-react-lite'
 import { StyleSheet } from 'react-native'
 import { Text } from 'react-native-paper'
@@ -4640,31 +3214,24 @@ import DiaryLesson from './Lesson'
 import { DiaryState } from './state'
 
 export default observer(function DiaryDay(props: XBottomTabScreenProps) {
-	if (DiaryStore.fallback) return DiaryStore.fallback
+	if (ScheduleStore.fallback) return ScheduleStore.fallback
 
-	const studentSettings = XSettings.forStudentOrThrow()
-	const dayLessons = DiaryStore.result.forDay(DiaryState.day, studentSettings)
+	const schedule = ScheduleStore.result!
+	const dayLessons = schedule.filter(
+		item => item.date.toYYYYMMDD() === DiaryState.day,
+	)
 
 	if (dayLessons.length === 0) {
 		return <Text style={styles.text}>Занятий нет, свобода!</Text>
 	}
 
 	return dayLessons.map((lesson, i) => (
-		<DiaryLesson
-			i={i}
-			key={lesson.classmeetingId.toString()}
-			lesson={lesson}
-			{...props}
-		/>
+		<DiaryLesson i={i} key={lesson.id.toString()} lesson={lesson} {...props} />
 	))
 })
 
 const styles = StyleSheet.create({
 	text: { textAlign: 'center', margin: Spacings.s4 },
-	reordableList: {
-		paddingHorizontal: Spacings.s1,
-	},
-	padding: { padding: Spacings.s2 },
 })
 </file>
 
@@ -4674,31 +3241,24 @@ import SelectModal from '@/components/SelectModal'
 import UpdateDate from '@/components/UpdateDate'
 import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { Lesson } from '@/services/net-school/lesson'
-import { DiaryStore } from '@/services/net-school/store'
+import { ScheduleStore } from '@/services/mgik/store'
 import { runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
-import { useCallback } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { CalendarProvider, ExpandableCalendar } from 'react-native-calendars'
 import { Positions } from 'react-native-calendars/src/expandableCalendar'
 import { ScrollView } from 'react-native-gesture-handler'
-import { Chip } from 'react-native-paper'
 import { XBottomTabScreenProps } from '../../../App'
 import { Spacings } from '../../utils/Spacings'
 import Day from './Day'
 import { DiaryState } from './state'
 
-// @ts-expect-error fix for defaultProps warning: https://github.com/wix/react-native-calendars/issues/2455
+// @ts-expect-error fix for defaultProps warning
 ExpandableCalendar.defaultProps = undefined
 
-import { Chips } from '@/components/Chips'
 import { LocaleConfig } from 'react-native-calendars'
-import { EditDiaryDayScreen } from './edit/Screen'
-import { EditDiaryFAB } from './edit/Select'
 
 // localization for react-native-calendars
-// https://github.com/arshaw/xdate/blob/3060bceb5f0901f48df9ae657b6349b2733fec37/src/xdate.js#L475
 LocaleConfig.locales['ru-RU'] = {
 	monthNames: [
 		'Январь',
@@ -4745,29 +3305,19 @@ LocaleConfig.defaultLocale = 'ru-RU'
 export default observer(function DiaryScreen(props: XBottomTabScreenProps) {
 	return (
 		<View style={styles.flex}>
-			<Header title="Дневник"></Header>
-			<EditDiaryFAB />
-			{!DiaryState.edit ? (
-				<ScrollView
-					contentContainerStyle={styles.scrollContentContainer}
-					refreshControl={DiaryStore.refreshControl}
-				>
-					<View style={styles.selectDayView}>
-						<SelectDay />
-					</View>
-					<Chips style={styles.chips}>
-						<Filter type="showHomework" label="Оценки" />
-						<Filter type="showAttachments" label="Файлы" />
-						<Filter type="showLessonTheme" label="Темы" />
-					</Chips>
-					<View style={styles.day}>
-						{DiaryStore.fallback || <Day {...props} />}
-					</View>
-					<UpdateDate store={DiaryStore} />
-				</ScrollView>
-			) : (
-				DiaryStore.fallback || <EditDiaryDayScreen />
-			)}
+			<Header title="Расписание" />
+			<ScrollView
+				contentContainerStyle={styles.scrollContentContainer}
+				refreshControl={ScheduleStore.refreshControl}
+			>
+				<View style={styles.selectDayView}>
+					<SelectDay />
+				</View>
+				<View style={styles.day}>
+					{ScheduleStore.fallback || <Day {...props} />}
+				</View>
+				<UpdateDate store={ScheduleStore} />
+			</ScrollView>
 		</View>
 	)
 })
@@ -4779,7 +3329,6 @@ const styles = StyleSheet.create({
 		alignContent: 'center',
 	},
 	selectDayView: { flex: 1, zIndex: 30 },
-	chips: { paddingBottom: 0 },
 	day: { padding: Spacings.s1 },
 })
 
@@ -4798,20 +3347,15 @@ const SelectDay = observer(function SelectDay() {
 		} = {
 			backgroundColor: Theme.colors.navigationBar,
 			calendarBackground: Theme.colors.navigationBar,
-
 			textSectionTitleColor: Theme.colors.primary,
 			monthTextColor: Theme.colors.primary,
 			arrowColor: Theme.colors.primary,
-
 			selectedDayBackgroundColor: Theme.colors.secondaryContainer,
 			selectedDayTextColor: Theme.colors.onSecondaryContainer,
-
 			todayBackgroundColor: Theme.colors.surfaceDisabled,
 			todayTextColor: Theme.colors.onSurfaceDisabled,
-
 			textDisabledColor: Theme.colors.onSurfaceDisabled,
 			dayTextColor: Theme.colors.onBackground,
-
 			expandableKnobColor: Theme.colors.secondaryContainer,
 		}
 		return (
@@ -4822,7 +3366,6 @@ const SelectDay = observer(function SelectDay() {
 						d = fromCalendar(d)
 						runInAction(() => {
 							DiaryState.day = d
-
 							const [day, month, year] = d.split('.').map(e => parseInt(e))
 							const weekDate = new Date(`${year}-${month}-${day}T00:00:00.000Z`)
 							DiaryState.week = weekDate
@@ -4840,7 +3383,7 @@ const SelectDay = observer(function SelectDay() {
 					initialPosition={Positions.CLOSED}
 					allowShadow
 					closeOnDayPress={false}
-				></ExpandableCalendar>
+				/>
 			</CalendarProvider>
 		)
 	}
@@ -4861,549 +3404,9 @@ const SelectDay = observer(function SelectDay() {
 	)
 })
 
-type FilterProps = {
-	type: keyof FilterObject<typeof DiaryState, boolean>
-	label: string
-}
-
-const Filter = observer(function Filter(props: FilterProps) {
-	const onPress = useCallback(
-		() =>
-			runInAction(() => {
-				DiaryState[props.type] = !DiaryState[props.type]
-			}),
-		[props.type],
-	)
-
-	return (
-		<Chip mode="flat" selected={DiaryState[props.type]} onPress={onPress}>
-			{props.label}
-		</Chip>
-	)
-})
-
 export type DiaryLessonProps = {
 	i: number
-	lesson: Lesson
-}
-</file>
-
-<file path="src/screens/settings/advanced/Advanced.tsx">
-import NumberInput from '@/components/NumberInput'
-import { SelectTime } from '@/components/SelectTime'
-import { Size } from '@/components/Size'
-import SwitchSetting from '@/components/SwitchSetting'
-import { XSettings } from '@/models/settings'
-import { Theme } from '@/models/theme'
-import { API } from '@/services/net-school/api'
-import { getStorageKeySize, getTotalStorageSize } from '@/utils/configure'
-import { Spacings } from '@/utils/Spacings'
-import { runInAction } from 'mobx'
-import { PersistStoreMap } from 'mobx-persist-store'
-import { observer } from 'mobx-react-lite'
-import { ScrollView, View } from 'react-native'
-import { List, Text } from 'react-native-paper'
-import { DatePickerInput } from 'react-native-paper-dates'
-import { ExportImportSettings } from './ExportSettings'
-
-export default observer(function Appearance() {
-	Theme.key
-
-	const overrideTime = new Date(XSettings.overrideTimeD)
-	return (
-		<ScrollView>
-			<List.Section title="Общие">
-				<View style={{ paddingHorizontal: Spacings.s2 }}>
-					<NumberInput
-						label="Timeout"
-						description="Максимальная длительность запроса, в секундах. Чем меньше значение, тем раньше приложение начнет использовать кеш вместо ожидания ответа от сервера"
-						value={API.timeoutLimit}
-						onChange={value => runInAction(() => (API.timeoutLimit = value))}
-						defaultValue={6}
-					/>
-					<NumberInput
-						label="Cache latency"
-						description="Использовать кэш если паралельных запросов больше чем это число. Полезно для оптимизации большого кол-ва запросов. 0 заставляет все запросы возвращать кеш по умолчанию."
-						value={API.useCacheOnMoreThenReqs}
-						onChange={value =>
-							runInAction(() => (API.useCacheOnMoreThenReqs = value))
-						}
-						defaultValue={6}
-					/>
-				</View>
-				<View style={{ gap: Spacings.s2 }}>
-					<SwitchSetting
-						setting="useOverrideTime"
-						title="Использовать кастомное время"
-						description="Полезно для демонстрации"
-					/>
-					<View style={{ paddingHorizontal: Spacings.s2 }}>
-						<SelectTime
-							label="Время в приложении"
-							value={{
-								minutes: overrideTime.getMinutes(),
-								hours: overrideTime.getHours(),
-							}}
-							onSelect={({ hours, minutes }) =>
-								runInAction(() => {
-									overrideTime.setHours(hours, minutes)
-									XSettings.save({ overrideTimeD: overrideTime.getTime() })
-								})
-							}
-							key={overrideTime.getTime().toString()}
-						/>
-						<DatePickerInput
-							locale="ru"
-							value={overrideTime}
-							onChange={d =>
-								!!d && XSettings.save({ overrideTimeD: d.getTime() })
-							}
-							inputMode="start"
-						/>
-					</View>
-				</View>
-			</List.Section>
-			<List.Section title="Хранилище">
-				<ExportImportSettings />
-				<SizeOfCache />
-				<List.Item
-					title={
-						<Text>
-							Очистить кэш ({Object.keys(API.cache).length} значений,{' '}
-							<Size t={API.cache} />)
-						</Text>
-					}
-					onPress={() => runInAction(() => (API.cache = {}))}
-				/>
-				<Stores />
-			</List.Section>
-		</ScrollView>
-	)
-})
-
-const SizeOfCache = observer(function SizeOfCache() {
-	return (
-		<List.Item
-			title={
-				<Text>
-					Занятое место: <Size t={getTotalStorageSize()} />
-				</Text>
-			}
-		/>
-	)
-})
-
-// eslint-disable-next-line mobx/missing-observer
-function Stores() {
-	return [...PersistStoreMap.values()].map(e => (
-		<List.Item
-			key={e.storageName}
-			title={
-				<Text>
-					{e.storageName}: <Size t={getStorageKeySize(e.storageName)} />
-				</Text>
-			}
-		/>
-	))
-}
-</file>
-
-<file path="src/screens/settings/screen.tsx">
-import Loading from '@/components/Loading'
-import { SettingsJumpNavigation } from '@/components/Navigate'
-import { XSettings } from '@/models/settings'
-import { Theme } from '@/models/theme'
-import { API } from '@/services/net-school/api'
-import { StackScreenProps } from '@react-navigation/stack'
-import { observer } from 'mobx-react-lite'
-import { ScrollView, View } from 'react-native'
-
-import Advanced from './advanced/Advanced'
-import Appearance from './colors/Appearance'
-import Notifications from './notifications/Notifications'
-import PrivacyPolicy from './support/PrivacyPolicy'
-import Support from './support/Support'
-import TermsAndConditions from './support/TermsAndConditions'
-import MicroUpdate from './update/micro-update'
-import UpdatesScreen from './update/screen'
-
-import SelectModal from '@/components/SelectModal'
-import { StudentsStore } from '@/services/net-school/store'
-import { Spacings } from '@/utils/Spacings'
-import * as Application from 'expo-application'
-import { memo } from 'react'
-import { HelperText } from 'react-native-paper'
-import { LogoutButton } from '../login/out'
-import {
-	SETTINGS_ROUTES,
-	SettingsNavigation,
-	SettingsRoutes,
-} from './navigation'
-
-export default observer(function SettingsScreen() {
-	Theme.key
-	return (
-		<SettingsNavigation.Navigator
-			initialRouteName="main"
-			screenOptions={a => ({
-				title: SETTINGS_ROUTES[a.route.name],
-				presentation: 'modal',
-			})}
-		>
-			<SettingsNavigation.Screen name="main" component={MainSettings} />
-
-			<SettingsNavigation.Screen name="notifs" component={Notifications} />
-			<SettingsNavigation.Screen name="colors" component={Appearance} />
-			<SettingsNavigation.Screen name="update" component={UpdatesScreen} />
-			<SettingsNavigation.Screen name="advanced" component={Advanced} />
-			<SettingsNavigation.Screen name="support" component={Support} />
-
-			<SettingsNavigation.Screen name="privacy" component={PrivacyPolicy} />
-			<SettingsNavigation.Screen name="terms" component={TermsAndConditions} />
-		</SettingsNavigation.Navigator>
-	)
-})
-
-// eslint-disable-next-line mobx/missing-observer
-const MainSettings = memo(function MainSettings(
-	props: StackScreenProps<SettingsRoutes>,
-) {
-	return (
-		<ScrollView
-			contentContainerStyle={{
-				flex: 1,
-			}}
-		>
-			<SelectStudent />
-			<SettingsJumpNavigation
-				navigation={props}
-				target={'notifs'}
-				description="О текущих уроках, о новых оценках"
-			/>
-
-			<SettingsJumpNavigation
-				navigation={props}
-				target={'colors'}
-				description="Тема, цвет акцента и др."
-			/>
-			<SettingsJumpNavigation
-				navigation={props}
-				target={'update'}
-				description="Обновления приложения"
-			/>
-			<SettingsJumpNavigation
-				navigation={props}
-				target={'advanced'}
-				description="Настройки для разработчиков"
-			/>
-			<SettingsJumpNavigation
-				navigation={props}
-				target={'support'}
-				description={'Тех поддержка и юр. сведения'}
-			/>
-
-			<LogoutButton />
-
-			<View style={{ alignItems: 'center', margin: Spacings.s2 }}>
-				<HelperText type="info" style={{ textAlign: 'center' }}>
-					{Application.applicationName} {Application.nativeApplicationVersion}{' '}
-					<MicroUpdate />
-					{'\n'}
-					{Application.applicationId}
-				</HelperText>
-			</View>
-		</ScrollView>
-	)
-})
-
-const SelectStudent = observer(function SelectStudent() {
-	return API.session ? (
-		StudentsStore.fallback || (
-			<SelectModal
-				data={StudentsStore.result.map((student, index) => ({
-					value: index + '',
-					label: XSettings.fullname(student.name),
-				}))}
-				mode="list.item"
-				value={XSettings.studentIndex + ''}
-				onSelect={student =>
-					XSettings.save({ studentIndex: Number(student.value) })
-				}
-				label={'Ученик'}
-			/>
-		)
-	) : (
-		<Loading text="Для выбора ученика авторизуйтесь" />
-	)
-})
-</file>
-
-<file path="src/services/net-school/entities.ts">
-import type { CustomSubject, StudentSettings } from '@/models/settings'
-import { add, set } from 'date-fns'
-import { makeAutoObservable } from 'mobx'
-import { Lesson, RawLesson } from './lesson'
-
-export interface Endpoint {
-	name: string
-	url: string
-}
-
-export interface Student {
-	name: string
-	shortName: string
-	studentId: number
-}
-
-export interface Education {
-	class: NSEntity & {
-		isFree: boolean
-	}
-	isAddSchool: boolean
-	school: NSEntity
-	schoolyear: NSEntity & {
-		endDate: string
-		startDate: string
-	}
-}
-
-export interface Subject extends NSEntity {
-	order: number
-	federalСurriculum: boolean
-}
-
-export interface Assignment {
-	classmeetingId: number
-	assignmentId: number
-	assignmentName: string
-	description?: string
-	result: string | number | null
-	classAssignment: boolean
-	duty: boolean
-	comment: string | number | null
-	assignmentTypeId: number
-	assignmentTypeAbbr: string
-	assignmentTypeName: string
-	weight: number
-	attachmentsExists: boolean
-	hasTextAnswer: boolean
-	hasFileAnswers: boolean
-	subjectId: number
-	subjectName: string
-	dueDate: string
-	answerFilesCount: number
-	extraActivity: boolean
-	resultDate: string | number | null
-	assignmentDate: string
-	canAnswer: boolean
-}
-
-function yyyymmddToDate(yyyymmdd: string) {
-	const match = yyyymmdd.match(/(\d\d)\.(\d\d)\.(\d\d\d\d)/)
-	if (!match) return
-	const [, day, month, year] = match.map(e => parseInt(e))
-	const date = set(new Date(), {
-		year: year,
-		date: day,
-		month: month - 1,
-		hours: 0,
-		minutes: 0,
-		seconds: 0,
-		milliseconds: 0,
-	})
-
-	return date
-}
-
-export function customSubjectToLessons(
-	custom: CustomSubject,
-	date: ReadonlyDate,
-	i: number,
-): Lesson[] {
-	const dayFromMonday = date.getDayFromMonday()
-
-	return custom.meetings
-		.filter(e => e.dayIndex === dayFromMonday)
-		.map((e, ii) => {
-			const startTime = set(new Date(date.getTime()), { ...e.startTime })
-			const endTime = add(new Date(startTime), { minutes: e.time })
-
-			const id = -1 * (i + 1) * (ii + 1)
-			return new Lesson(
-				{
-					addEducation: true,
-					assignmentId: [],
-					attachmentsExists: false,
-					attendance: null,
-					classmeetingId: id,
-					day: startTime.toString(),
-					endTime: endTime.toString(),
-					startTime: startTime.toString(),
-					extraActivity: false,
-					lessonTheme: '',
-					order: id,
-					resultsExists: false,
-					roomName: '',
-					scheduleTimeNumber: 0,
-					scheduleTimeRelay: 0,
-					studentId: -1,
-					subjectGroupId: id,
-					subjectId: id,
-					subjectName: custom.name,
-					teachers: [],
-					distanceMeetingId: id,
-				},
-				true,
-				e.sendNotificationBeforeMins * 60,
-			)
-		})
-}
-
-/**
- * Class representing diary
- */
-export class Diary {
-	lessons: Lesson[]
-
-	/**
-	 * Creates new diary
-	 * @param lessons - Raw lessons from fetch response
-	 */
-	constructor(lessons: RawLesson[]) {
-		this.lessons = lessons.map(lesson => new Lesson(lesson))
-		makeAutoObservable(this, { forDay: false, isNow: false, lessons: true })
-	}
-
-	/**
-	 * Gets lesson for specified day
-	 * @param day - Day to search for in format yyyymmdd, use Date.toyyyymmdd()
-	 */
-	forDay(day: string, studentSettings: StudentSettings) {
-		const date = yyyymmddToDate(day)
-		return this.lessons
-			.concat(
-				...[
-					date
-						? studentSettings.customSubjects
-								.map((e, i) => customSubjectToLessons(e, date, i))
-								.flat()
-						: [],
-				],
-			)
-			.filter(
-				lesson =>
-					lesson.start(studentSettings).toYYYYMMDD() === day &&
-					!lesson.isIgnored(studentSettings),
-			)
-			.sort(
-				(a, b) =>
-					a.start(studentSettings).getTime() -
-					b.start(studentSettings).getTime(),
-			)
-	}
-
-	isNow(lesson: Lesson, studentSettings: StudentSettings) {
-		const start = lesson.end(studentSettings)
-		const end = lesson.start(studentSettings)
-		const date = new Date()
-
-		return date >= start && date <= end
-	}
-}
-
-export interface ClassMeetingStats {
-	passed: number
-	scheduled: number
-}
-
-/**
- * ALl marks for one subject
- */
-export interface SubjectPerformance {
-	subject: NSEntity
-	term: NSEntity
-	averageMark: number
-	classAverageMark: number
-	maxMark: number
-	classmeetingsStats: ClassMeetingStats
-	teachers: NSEntity[]
-	results: {
-		date: string
-		assignmentId: number
-		classMeetingId: number
-		classMeetingDate: string
-		result: number
-		duty: boolean
-		comment: string | number | null
-		weight: number
-		assignmentTypeId: number
-		assignmentTypeAbbr: string
-		assignmentTypeName: string
-	}[]
-	markStats: {
-		mark: number
-		count: number
-		fraction: number
-	}[]
-	attendance: {
-		classMeetingId: number
-		classMeetingDate: string
-		attendanceMark: string
-	}[]
-}
-
-/**
- * Total marks of the subject
- */
-export interface Total {
-	subjectId: number
-	termTotals: {
-		term: NSEntity
-		mark: string | number | null
-		markCode: 'NotExamined' | 'PointSystem'
-		avgMark: number | null
-	}[]
-	yearTotals: {
-		period: {
-			id: number
-			periodName: string
-			periodType: string
-		}
-		mark: string | number | null
-	}[]
-}
-
-export interface RawEndpoints {
-	items: ({ demo: boolean } & Endpoint)[]
-}
-
-export interface NSEntity {
-	id: number
-	name: string
-}
-export type ReactStateHook = {
-	authorized: null | true
-	updateEffects: number
-}
-
-export interface Attachment {
-	classMeetingId: number
-	assignmentId: number
-	attachmentId: number
-	fileName: string
-	description: null | string
-}
-export type PartialAssignment = Partial<
-	Omit<
-		SubjectPerformance['results'][number],
-		'result' | 'assignmentId' | 'date' | 'weight' | 'date'
-	>
-> & {
-	date?: string
-	result: 'Нет' | number | string
-	assignmentId?: string | number
-	custom?: boolean
-	weight: number
+	lesson: import('@/services/mgik/api').ScheduleItem
 }
 </file>
 
@@ -5506,6 +3509,110 @@ function dateToHoursMinutes(date: ReadonlyDate): HoursMinutes {
 }
 </file>
 
+<file path="src/utils/configure.ts">
+import { configure as configureMobx } from 'mobx'
+import { configurePersistable } from 'mobx-persist-store'
+import { createMMKV } from 'react-native-mmkv'
+
+configureMobx({
+	enforceActions: 'always',
+	computedRequiresReaction: true,
+})
+
+const storage = createMMKV()
+configurePersistable({
+	removeOnExpiration: false,
+	storage: {
+		setItem: (key, data) => storage.set(key, data),
+		getItem: key => storage.getString(key)!,
+		removeItem: key => void storage.remove(key),
+	},
+})
+
+if (!__TEST__) setTimeout(() => storage.trim(), 20000) // Cleanup
+
+export function getTotalStorageSize() {
+	return storage.size
+}
+export function getStorageKeySize(key: string) {
+	return storage.getBuffer(key)?.byteLength ?? 0
+}
+
+export function getStorageValue(key: string) {
+	return storage.getString(key)!
+}
+export function setStorageValue(key: string, value: string) {
+	storage.set(key, value)
+}
+</file>
+
+<file path="src/utils/polyfill.ts">
+import 'react-native-url-polyfill'
+
+// @ts-expect-error Global variable
+globalThis.__TEST__ ??= false
+
+declare global {
+	interface DateConstructor {
+		week(date: Date): [Date, Date, Date, Date, Date, Date, Date]
+	}
+	interface Date {
+		weekStart(): Date
+		toNetSchool(): string
+		weekEnd(): Date
+		toYYYYMMDD(): string
+		toHHMM(): string
+		weekStartDay: number
+		toReadable(): string
+		getDayFromMonday(): number
+	}
+
+	let debug: (...messages: unknown[]) => void
+}
+
+export {}
+
+/* istanbul ignore else */
+if (__DEV__) {
+	// eslint-disable-next-line no-console
+	// @ts-expect-error Global variable
+	globalThis.debug = console.log.bind(console)
+} else {
+	// @ts-expect-error Global variable
+	globalThis.debug = () => {}
+}
+
+Date.prototype.toNetSchool = function (this: Date) {
+	return this.toJSON().split('T')[0]
+}
+
+Date.prototype.getDayFromMonday = function (this: Date) {
+	return [6, 0, 1, 2, 3, 4, 5][this.getDay()]
+}
+Date.prototype.toYYYYMMDD = function (this: Date) {
+	return `${this.getDate().toString().padStart(2, '0')}.${(this.getMonth() + 1)
+		.toString()
+		.padStart(2, '0')}.${this.getFullYear()}`
+}
+Date.prototype.toHHMM = function (this: Date) {
+	return `${this.getHours().toString().padStart(2, '0')}:${this.getMinutes()
+		.toString()
+		.padStart(2, '0')}`
+}
+Date.prototype.toReadable = function (this: Date) {
+	return this.toHHMM() + ' ' + this.toYYYYMMDD()
+}
+
+const dayInMs = 1000 * 60 * 60 * 24
+Date.week = date =>
+	new Array(7)
+		.fill('')
+		.map(
+			(_, i) =>
+				new Date(date.getTime() - (date.getDayFromMonday() - i) * dayInMs),
+		) as ReturnType<typeof Date.week>
+</file>
+
 <file path="src/screens/day/Lesson.tsx">
 import { Theme } from '@/models/theme'
 import { observer } from 'mobx-react-lite'
@@ -5516,21 +3623,16 @@ import { DiaryState } from './state'
 
 import { ChipLike } from '@/components/ChipLike'
 import { ScrollTextCopyable } from '@/components/ScrollTextCopyable'
-import SubjectName from '@/components/SubjectName'
-import { XSettings } from '@/models/settings'
-import { Lesson } from '@/services/net-school/lesson'
-import { ModalAlert } from '@/utils/Toast'
+import { ScheduleItem } from '@/services/mgik/api'
 import { useStyles } from '@/utils/useStyles'
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 import { XBottomTabScreenProps } from '../../../App'
 import { globalStyles } from '../../constants'
-import { EditSingleLesson } from './edit/EditSingleLesson'
-import LessonProgress, { LessonProgressStore } from './Progress'
+import LessonProgress from './Progress'
 import { DiaryLessonProps } from './screen'
 
 export default observer(function DiaryLesson({
 	lesson,
-	navigation,
 	i,
 	...props
 }: Omit<DiaryLessonProps, 'navigateToLessonMarks'> & XBottomTabScreenProps) {
@@ -5543,36 +3645,21 @@ export default observer(function DiaryLesson({
 		[props, i, lesson],
 	)
 
-	const onLongPress = useCallback(
-		() =>
-			ModalAlert.show('Редактировать', <EditSingleLesson lesson={lesson} />),
-		[lesson],
-	)
-
 	const cardStyle = useStyles(
 		() => ({
 			margin: Spacings.s1,
 			borderCurve: 'continuous',
-
-			// Display border frame only when lesson is going
-			borderWidth:
-				LessonProgressStore.currentLesson === lesson.classmeetingId
-					? Spacings.s1
-					: 0,
-
+			borderWidth: 0,
 			borderColor: Theme.colors.primary,
 			padding: Spacings.s2,
 			flex: 1,
 			gap: Spacings.s2,
 		}),
-		[LessonProgressStore.currentLesson],
+		[],
 	)
 
 	return (
-		<Card
-			style={cardStyle}
-			onLongPress={!lesson.isCustom ? onLongPress : undefined}
-		>
+		<Card style={cardStyle}>
 			<TopRow {...newProps} />
 			<Divider bold style={{ marginBottom: Spacings.s1 }} />
 			<MiddleRow {...newProps} />
@@ -5598,18 +3685,12 @@ const Name = observer(function Name({
 		>
 			<View style={[styles.name, { flexWrap: 'nowrap' }]}>
 				<ChipLike>{i + 1}</ChipLike>
-				<SubjectName
-					editDisabled={lesson.isCustom}
-					style={Theme.fonts.titleMedium}
-					subjectId={lesson.subjectId}
-					subjectName={lesson.subjectName}
-					offsetDayId={lesson.offsetDayId}
-				/>
+				<Text style={Theme.fonts.titleMedium}>{lesson.discipline}</Text>
 			</View>
 			<View
 				style={[styles.name, { justifyContent: 'flex-end', height: '100%' }]}
 			>
-				<ChipLike>{lesson.roomName || '?'}</ChipLike>
+				<ChipLike>{lesson.auditoriumShortName || '?'}</ChipLike>
 				<LessonTimeChip lesson={lesson} />
 			</View>
 		</View>
@@ -5623,244 +3704,41 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		flexWrap: 'wrap',
 		alignItems: 'flex-start',
-		// alignItems: 'center',
 	},
 })
 
 export const LessonTimeChip = observer(function Time({
 	lesson,
 }: {
-	lesson: Lesson
+	lesson: ScheduleItem
 }) {
-	const studentSettings = XSettings.forStudentOrThrow()
 	return (
 		<ChipLike>
-			{lesson.start(studentSettings).toHHMM()} -{' '}
-			{lesson.end(studentSettings).toHHMM()}
+			{lesson.startTime.toHHMM()} - {lesson.endTime.toHHMM()}
 		</ChipLike>
 	)
 })
 
-const MiddleRow = observer(function MiddleRow({ lesson }: DiaryLessonProps) {
+const MiddleRow = observer(function MiddleRow({
+	lesson,
+}: {
+	lesson: ScheduleItem
+}) {
 	return (
 		<>
 			{DiaryState.showLessonTheme && (
 				<ScrollTextCopyable>
-					{lesson.lessonTheme ?? 'Темы нет'}
+					{lesson.teacherName
+						? `Преподаватель: ${lesson.teacherName}`
+						: 'Нет преподавателя'}
 				</ScrollTextCopyable>
 			)}
-
-			{DiaryState.showAttachments && lesson.attachmentsExists && (
-				<Text>Есть прикрепленные файлы</Text>
+			{lesson.lessonComment && (
+				<ScrollTextCopyable>{lesson.lessonComment}</ScrollTextCopyable>
 			)}
 		</>
 	)
 })
-</file>
-
-<file path="src/models/theme.ts">
-import {
-	DarkTheme as NavigationDarkTheme,
-	DefaultTheme as NavigationDefaultTheme,
-} from '@react-navigation/native'
-
-import * as SystemUI from 'expo-system-ui'
-
-import { captureException } from '@sentry/react-native'
-import { makeAutoObservable, reaction, runInAction, toJS } from 'mobx'
-import { Appearance, AppState, Platform, StatusBar } from 'react-native'
-import { MD3DarkTheme, MD3LightTheme } from 'react-native-paper'
-import type { MD3Colors } from 'react-native-paper/lib/typescript/types'
-import { Logger } from '../constants'
-import { prepareVariant } from '../utils/createTheme'
-import { makeReloadPersistable } from '../utils/makePersistable'
-
-type ThemeName = 'light' | 'dark'
-type SchemeName = ThemeName | 'system'
-
-type PersistentKeys = Record<'scheme' | 'accentColor', string> & {
-	accentColors: string[]
-	roundness: number
-}
-
-export class ThemeStore {
-	static readonly defaultAccentColor = '#578059'
-	static getDefaultAccentColors() {
-		return [this.defaultAccentColor, '#427979', '#3C639C', '#967857', '#926759']
-	}
-
-	private accentColor = ThemeStore.defaultAccentColor
-	private accentColors = ThemeStore.getDefaultAccentColors()
-	private theme = this.generateTheme()
-	private loading = true
-
-	private scheme: SchemeName = 'system'
-	public roundness = 5
-
-	public manage = {
-		isLoading: () => this.loading,
-		getTheme: () => this.theme,
-
-		getScheme: () => this.scheme,
-		setScheme: this.setScheme.bind(this),
-
-		getAccentColor: () => this.accentColor,
-		getAccentColors: () => this.accentColors,
-		setAccentColor: this.setAccentColor.bind(this),
-		clearSelectedAccentColors: this.clearSelectedAccentColors.bind(this),
-	}
-
-	get key() {
-		return this.accentColor + this.theme
-	}
-
-	get dark(): boolean {
-		return this.theme.dark
-	}
-
-	get colors(): MD3Colors & { navigationBar: string } {
-		return this.theme.colors
-	}
-
-	get animation() {
-		return this.theme.animation
-	}
-
-	get fonts() {
-		return toJS(this.theme.fonts)
-	}
-
-	constructor() {
-		Logger.info('THEME CREATE')
-		makeAutoObservable<this, 'isDark'>(
-			this,
-			{ isDark: false },
-			{ autoBind: true },
-		)
-		makeReloadPersistable<PersistentKeys, keyof PersistentKeys>(
-			this as unknown as PersistentKeys,
-			{
-				properties: ['scheme', 'accentColor', 'accentColors', 'roundness'],
-				name: 'theme',
-			},
-		).then(() =>
-			runInAction(() => {
-				try {
-					Logger.info('THEME LOADED')
-					this.loading = false
-					this.setAccentColor(this.accentColor)
-				} catch (e) {
-					Logger.error(e)
-				}
-			}),
-		)
-
-		AppState.addEventListener('change', state => {
-			if (state === 'inactive' || state === 'background') return
-			this.updateSystemBars()
-		})
-
-		Appearance.addChangeListener(this.updateColorScheme)
-
-		reaction(
-			() => this.roundness,
-			() => this.updateColorScheme(),
-		)
-
-		this.updateSystemBars()
-	}
-
-	private get isDark() {
-		return Appearance.getColorScheme() === 'dark'
-	}
-
-	private setScheme(theme: SchemeName) {
-		this.scheme = theme
-		Appearance.setColorScheme(theme === 'system' ? null : theme)
-	}
-
-	private setAccentColor(color: string) {
-		color = color.slice(0, 7)
-		if (!this.accentColors.includes(color)) this.accentColors.push(color)
-		this.accentColor = color
-		this.updateColorScheme()
-	}
-
-	private clearSelectedAccentColors() {
-		this.accentColors = ThemeStore.getDefaultAccentColors()
-	}
-
-	private updateColorScheme() {
-		// Generate theme based on accent color
-		this.theme = this.generateTheme()
-
-		// Does not really works for the first time bruh
-		this.updateSystemBars().then(() => this.updateSystemBars())
-	}
-
-	private async updateSystemBars() {
-		const promises: Promise<void>[] = []
-
-		// disabled with edge-to-edge enabled
-		// if (Platform.OS === 'android') {
-		// 	promises.push(
-		// 		NavigationBar.setButtonStyleAsync(this.isDark ? 'light' : 'dark'),
-		// 		NavigationBar.setBackgroundColorAsync(Theme.colors.navigationBar),
-		// 		NavigationBar.setVisibilityAsync('visible'),
-		// 	)
-		// }
-
-		promises.push(SystemUI.setBackgroundColorAsync(Theme.colors.navigationBar))
-
-		// If i use it as react component it does not update half of the time
-		StatusBar.setBarStyle(this.isDark ? 'light-content' : 'dark-content', true)
-		if (Platform.OS === 'android') {
-			StatusBar.setBackgroundColor(Theme.colors.navigationBar, true)
-		}
-
-		await Promise.all(promises).catch(captureException)
-
-		Logger.info('UPDATE SYSTEM BARS')
-	}
-
-	private generateTheme() {
-		const dark = this.isDark
-		const navigation = dark ? NavigationDarkTheme : NavigationDefaultTheme
-		const material = dark ? MD3DarkTheme : MD3LightTheme
-		const colors = prepareVariant({
-			primary: this.accentColor,
-			type: dark ? 'dark' : 'light',
-		})
-
-		const card = colors.elevation.level2
-
-		return {
-			...navigation,
-			...material,
-			roundness: this.roundness,
-			colors: {
-				...navigation.colors,
-				...colors,
-				card,
-				navigationBar: card,
-				primary: colors.primary,
-				background: colors.background,
-				text: colors.onSurface,
-				border: colors.outline,
-				notification: colors.error,
-			},
-		}
-	}
-
-	get destructiveButton() {
-		return {
-			style: { backgroundColor: this.colors.errorContainer },
-			labelStyle: { color: this.colors.onErrorContainer },
-		}
-	}
-}
-
-export const Theme = new ThemeStore()
 </file>
 
 </files>

@@ -67,15 +67,13 @@ export const DiaryState = new (class {
 })()
 
 autorun(() => {
-	const { selectedGroup } = XSettings
-	if (!selectedGroup) return
+	const { currentGroupId } = XSettings
+	if (!currentGroupId) return
 
 	ScheduleStore.withParams({
-		idGroup: selectedGroup,
+		idGroup: currentGroupId,
 		isDo: undefined,
 	})
-
-	// ScheduleStore will fetch all schedule for the group; we can filter by week
 })
 
 function weekValue(text: string, week: Date) {

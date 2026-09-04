@@ -1,5 +1,4 @@
-import { StudentSettings } from '@/models/settings'
-import { Lesson } from '@/services/net-school/lesson'
+import { GroupSettings } from '@/models/settings'
 import { makeAutoObservable } from 'mobx'
 
 export enum EditDiaryScreen {
@@ -17,25 +16,13 @@ export const EditDiaryState = new (class {
 })()
 
 export function setLessonTimeOffset(
-	lesson: Pick<Lesson, 'offsetId' | 'dayId'>,
+	lessonId: number,
 	offset: number,
-	studentSettings: StudentSettings,
+	groupSettings: GroupSettings,
 ) {
-	let dayOrder = studentSettings.lessonOrder[lesson.offsetId]
-	if (!dayOrder) {
-		studentSettings.lessonOrder[lesson.offsetId] = {}
-		dayOrder = studentSettings.lessonOrder[lesson.offsetId]
-	}
-
-	if (!dayOrder) throw new TypeError('Day order is undefined!')
-
 	if (offset) {
-		dayOrder[lesson.dayId] = offset
+		groupSettings.lessonOrder[lessonId] = offset
 	} else {
-		delete dayOrder[lesson.dayId]
-		if (!Object.keys(dayOrder).length) {
-			delete studentSettings.lessonOrder[lesson.offsetId]
-		}
+		delete groupSettings.lessonOrder[lessonId]
 	}
-	debug({ offset, s: lesson.dayId })
 }

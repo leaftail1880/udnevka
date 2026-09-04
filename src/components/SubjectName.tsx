@@ -1,6 +1,5 @@
-import { StudentSettings, XSettings } from '@/models/settings'
+import { GroupSettings, XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { Subject } from '@/services/net-school/entities'
 import { runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
 import { useCallback, useState } from 'react'
@@ -15,7 +14,6 @@ import {
 import {
 	Button,
 	Dialog,
-	HelperText,
 	Portal,
 	Text,
 	TextInput,
@@ -23,39 +21,28 @@ import {
 } from 'react-native-paper'
 
 type SubjectNameOptions = {
-	subjectId: number
+	discipline: string
 	offsetDayId?: string
-} & ({ subjects: Subject[] } | { subjectName: string })
+}
 
 export function getSubjectName(from: SubjectNameOptions) {
-	const { studentId } = XSettings
-	if (!studentId) return 'Загрузка'
-
-	const studentSettings = XSettings.forStudent(studentId)
+	const groupSettings = XSettings.forCurrentGroupOrThrow()
 	if (from.offsetDayId) {
-		const dayOverriden = studentSettings.subjectNamesDay[from.offsetDayId]
-
+		const dayOverriden = groupSettings.subjectNamesDay[from.offsetDayId]
 		if (dayOverriden) return dayOverriden
 	}
 
-	return getOverridenOrOfficalName(from, studentSettings)
+	return getOverridenOrOfficalName(from, groupSettings)
 }
 
 export function getOverridenOrOfficalName(
 	from: SubjectNameOptions,
-	studentSettings: StudentSettings,
+	groupSettings: GroupSettings,
 ) {
-	const overriden = studentSettings.subjectNames[from.subjectId]
+	const overriden = groupSettings.subjectNames[from.discipline]
 	if (overriden) return overriden
 
-	return getOfficalName(from)
-}
-
-function getOfficalName(props: SubjectNameOptions) {
-	return 'subjectName' in props
-		? props.subjectName
-		: (props.subjects.find(subject => props.subjectId === subject.id)?.name ??
-				'Предмет 404')
+	return from.discipline
 }
 
 type SubjectNameProps = {
@@ -97,9 +84,7 @@ const EditSubjectName = observer(function EditSubjectName({
 	setIsEditing,
 	...props
 }: { setIsEditing: (v: boolean) => void } & SubjectNameProps) {
-	const studentSettings = XSettings.forStudentOrThrow()
-	const dayOverriden = getSubjectName(props)
-	const globalOverriden = getOverridenOrOfficalName(props, studentSettings)
+	const groupSettings = XSettings.forCurrentGroupOrThrow()
 	const [name, setName] = useState('')
 	const onCancelPress = useCallback(() => {
 		setName('')
@@ -108,11 +93,11 @@ const EditSubjectName = observer(function EditSubjectName({
 
 	const onSavePress = useCallback(() => {
 		runInAction(() => {
-			if (name) studentSettings.subjectNames[props.subjectId] = name
-			else delete studentSettings.subjectNames[props.subjectId]
+			if (name) groupSettings.subjectNames[props.discipline] = name
+			else delete groupSettings.subjectNames[props.discipline]
 		})
 		setIsEditing(false)
-	}, [setIsEditing, name, studentSettings.subjectNames, props.subjectId])
+	}, [setIsEditing, name, groupSettings.subjectNames, props.discipline])
 
 	return (
 		<Portal>
@@ -124,24 +109,12 @@ const EditSubjectName = observer(function EditSubjectName({
 					<Text>
 						Имя в журнале:{' '}
 						<Text style={{ fontWeight: 'bold' }} selectable>
-							{getOfficalName(props)}
+							{props.discipline}
 						</Text>
 					</Text>
-					{dayOverriden !== globalOverriden && (
-						<>
-							<HelperText type="error">
-								Имя уже перезаписано для конкретного дня и урока, а сейчас вы
-								меняете имя глобально. Если вы хотите переименовать конкретный
-								урок в конкретный день, долго зажмите на пустое место на
-								карточке предмета
-							</HelperText>
-							<Text>Глобально: {globalOverriden}</Text>
-							<Text>Для дня: {dayOverriden}</Text>
-						</>
-					)}
 					<TextInput
 						mode="outlined"
-						defaultValue={getOverridenOrOfficalName(props, studentSettings)}
+						defaultValue={props.discipline}
 						onChangeText={setName}
 						placeholder="Как в журнале"
 					/>

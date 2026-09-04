@@ -115,7 +115,7 @@ export class ThemeStore {
 
 	private setScheme(theme: SchemeName) {
 		this.scheme = theme
-		Appearance.setColorScheme(theme === 'system' ? null : theme)
+		Appearance.setColorScheme(theme === 'system' ? 'unspecified' : theme)
 	}
 
 	private setAccentColor(color: string) {
