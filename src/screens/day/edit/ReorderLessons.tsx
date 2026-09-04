@@ -1,7 +1,7 @@
 import { ChipLike } from '@/components/ChipLike'
 import { getSubjectName } from '@/components/SubjectName'
 import { globalStyles } from '@/constants'
-import { XSettings } from '@/models/settings'
+import { GroupSettings, XSettings, getLessonKey } from '@/models/settings'
 import { Theme } from '@/models/theme'
 import { ScheduleItem } from '@/services/mgik/api'
 import { ScheduleStore } from '@/services/mgik/store'
@@ -70,8 +70,8 @@ export const EditDiaryReorderLessons = observer(function DiaryEditDay() {
 					args.to,
 				)
 
-				setLessonTimeOffset(to.id, offset, groupSettings)
-				setLessonTimeOffset(from.id, -offset, groupSettings)
+				setLessonTimeOffset(getLessonKey(to), offset, groupSettings)
+				setLessonTimeOffset(getLessonKey(from), -offset, groupSettings)
 			})
 		},
 		[lessonsSorted, groupSettings],
@@ -106,7 +106,7 @@ const localStyles = StyleSheet.create({
 })
 
 function keyExtractor(lesson: ScheduleItem) {
-	return lesson.id.toString()
+	return getLessonKey(lesson)
 }
 
 function getOffset(
@@ -139,8 +139,9 @@ export const DiaryLessonShort = observer(function DraggableLesson({
 	isEdited?: boolean
 } & TouchableOpacityProps) {
 	const groupSettings = XSettings.forCurrentGroupOrThrow()
-	const isMoved = !!groupSettings.lessonOrder[lesson.id]
-	const isIgnored = groupSettings.ignoreLessons?.includes(lesson.id.toString())
+	const lessonKey = getLessonKey(lesson)
+	const isMoved = !!groupSettings.lessonOrder[lessonKey]
+	const isIgnored = groupSettings.ignoreLessons?.includes(lessonKey)
 
 	return (
 		<TouchableOpacity
@@ -172,7 +173,7 @@ export const DiaryLessonShort = observer(function DraggableLesson({
 			<Text style={Theme.fonts.titleSmall}>
 				{getSubjectName({
 					discipline: lesson.discipline,
-					offsetDayId: lesson.id.toString(),
+					offsetDayId: lessonKey,
 				})}
 			</Text>
 		</TouchableOpacity>
@@ -186,16 +187,22 @@ export const RenderDiaryLessonDraggable: ListRenderItem<
 
 export function sortByDate(
 	lessons: ScheduleItem[],
-	groupSettings: ReturnType<typeof XSettings.forCurrentGroupOrThrow>,
+	groupSettings: GroupSettings,
 	realTime = false,
 ) {
 	return lessons.sort((a, b) => {
 		const aDate = realTime
 			? a.startTime
-			: new Date(a.startTime.getTime() + (groupSettings.lessonOrder[a.id] ?? 0))
+			: new Date(
+					a.startTime.getTime() +
+						(groupSettings.lessonOrder[getLessonKey(a)] ?? 0),
+				)
 		const bDate = realTime
 			? b.startTime
-			: new Date(b.startTime.getTime() + (groupSettings.lessonOrder[b.id] ?? 0))
+			: new Date(
+					b.startTime.getTime() +
+						(groupSettings.lessonOrder[getLessonKey(b)] ?? 0),
+				)
 		return aDate.getTime() - bDate.getTime()
 	})
 }

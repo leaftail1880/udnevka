@@ -16,13 +16,13 @@ export const EditDiaryState = new (class {
 })()
 
 export function setLessonTimeOffset(
-	lessonId: number,
+	lessonKey: string,
 	offset: number,
 	groupSettings: GroupSettings,
 ) {
 	if (offset) {
-		groupSettings.lessonOrder[lessonId] = offset
+		groupSettings.lessonOrder[lessonKey] = offset
 	} else {
-		delete groupSettings.lessonOrder[lessonId]
+		delete groupSettings.lessonOrder[lessonKey]
 	}
 }

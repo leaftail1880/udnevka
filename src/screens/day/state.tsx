@@ -27,9 +27,11 @@ export const DiaryState = new (class {
 	day = new Date().toYYYYMMDD()
 	week = new Date()
 
-	showHomework = false // no assignments now
-	showAttachments = false // no attachments
+	showHomework = false
+	showAttachments = false
 	showLessonTheme = true
+
+	edit = false
 
 	get weekDays() {
 		return Date.week(this.week)

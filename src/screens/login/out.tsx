@@ -13,11 +13,8 @@ function logOut() {
 	ModalAlert.close()
 	runInAction(() => {
 		XSettings.save({
-			selectedClientType: undefined,
-			selectedFormOfEducation: undefined,
-			selectedCourse: undefined,
-			selectedFaculty: undefined,
-			selectedGroup: undefined,
+			selectedGroupIds: [],
+			currentGroupId: undefined,
 		})
 	})
 }
@@ -25,7 +22,7 @@ function logOut() {
 function ensureLogin() {
 	ModalAlert.show(
 		'Вы уверены?',
-		<Text>Вы сбросите выбранную группу и сможете выбрать другую.</Text>,
+		<Text>Вы сбросите выбранные группы и сможете выбрать другую.</Text>,
 		true,
 		[{ label: 'Сбросить', callback: logOut }],
 	)
@@ -34,7 +31,7 @@ function ensureLogin() {
 export const LogoutButton = observer(function LogoutButton() {
 	return (
 		<Button onPress={ensureLogin} {...Theme.destructiveButton}>
-			Сбросить группу
+			Сбросить группы
 		</Button>
 	)
 })
@@ -47,7 +44,7 @@ export default observer(function LogoutScreen() {
 
 	return (
 		<View style={viewStyle}>
-			<Header title="Сброс группы"></Header>
+			<Header title="Сброс групп"></Header>
 			<View style={styles.container}>
 				<LogoutButton />
 			</View>

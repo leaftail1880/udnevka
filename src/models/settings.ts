@@ -17,10 +17,21 @@ export interface CustomSubject {
 
 export interface GroupSettings {
 	customSubjects: CustomSubject[]
-	lessonOrder: Record<number, Record<string, number> | undefined>
+	// Key: lesson composite key (id_discipline)
+	lessonOrder: Record<string, number>
+	// Key: discipline name (global override)
 	subjectNames: Record<string, string | undefined>
+	// Key: lesson composite key (day-specific override)
 	subjectNamesDay: Record<string, string | undefined>
+	// Array of lesson composite keys to hide
 	ignoreLessons?: string[]
+}
+
+export function getLessonKey(lesson: {
+	id: number
+	discipline: string
+}): string {
+	return `${lesson.id}_${lesson.discipline}`
 }
 
 class SettingsStore {

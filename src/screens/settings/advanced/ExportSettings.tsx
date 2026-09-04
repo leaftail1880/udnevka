@@ -11,6 +11,7 @@ import { List, Text } from 'react-native-paper'
 const currentFormatVersion = 1
 
 interface ExportedUdnevkaSettingsFormat {
+	appName: 'udnevka'
 	formatVersion: typeof currentFormatVersion // future proof
 	appVersion: string // 0.18.0
 	storages: {
@@ -40,12 +41,13 @@ export const ExportImportSettings = observer(function ExportImportSettings() {
 
 						const exportedStorage: ExportedUdnevkaSettingsFormat = {
 							formatVersion: currentFormatVersion,
+							appName: 'udnevka',
 							appVersion: nativeApplicationVersion ?? '0.0.0',
 							storages: storages
 								.map(
 									e =>
 										({
-											formatVersion: currentFormatVersion as number,
+											formatVersion: currentFormatVersion,
 											id: e.key,
 											content: getStorageValue(e.key),
 										}) as ExportedUdnevkaSettingsFormat['storages'][number],
@@ -97,6 +99,12 @@ export const ExportImportSettings = observer(function ExportImportSettings() {
 								'Отсутствует версия в файле',
 								'Убедитесь что вы выбрали тот файл',
 								true,
+							)
+
+						if ('appName' in json && json.appName !== 'udnevka')
+							return ModalAlert.show(
+								'Неверный формат',
+								`Ожидалось приложениие udnevka, получен ${json.appName}`,
 							)
 
 						if (json.formatVersion > currentFormatVersion)

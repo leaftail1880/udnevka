@@ -1,6 +1,6 @@
 import { HoursMinutes, SelectTime } from '@/components/SelectTime'
 import { LANG } from '@/constants'
-import { XSettings } from '@/models/settings'
+import { XSettings, getLessonKey } from '@/models/settings'
 import { ScheduleItem } from '@/services/mgik/api'
 import { Spacings } from '@/utils/Spacings'
 import { ModalAlert } from '@/utils/Toast'
@@ -17,6 +17,7 @@ export const EditSingleLesson = observer(function EditSingleLesson({
 	lesson: ScheduleItem
 }) {
 	const groupSettings = XSettings.forCurrentGroupOrThrow()
+	const lessonKey = getLessonKey(lesson)
 	const [startTime, setStartTime] = useState(
 		dateToHoursMinutes(lesson.startTime),
 	)
@@ -25,7 +26,7 @@ export const EditSingleLesson = observer(function EditSingleLesson({
 	const showLesson = () => {
 		runInAction(() => {
 			groupSettings.ignoreLessons = groupSettings.ignoreLessons?.filter(
-				e => e !== lesson.id.toString(),
+				e => e !== lessonKey,
 			)
 		})
 	}
@@ -48,7 +49,7 @@ export const EditSingleLesson = observer(function EditSingleLesson({
 				onChangeText={t => {
 					setName(t)
 					if (t !== lesson.discipline) {
-						groupSettings.subjectNamesDay[lesson.id.toString()] = t
+						groupSettings.subjectNamesDay[lessonKey] = t
 					}
 				}}
 			/>
@@ -59,18 +60,18 @@ export const EditSingleLesson = observer(function EditSingleLesson({
 					setStartTime(startTime)
 					runInAction(() => {
 						const offset = getOffset(lesson.startTime, startTime)
-						setLessonTimeOffset(lesson.id, offset, groupSettings)
+						setLessonTimeOffset(lessonKey, offset, groupSettings)
 					})
 				}}
 			/>
 
-			{!groupSettings.ignoreLessons?.includes(lesson.id.toString()) ? (
+			{!groupSettings.ignoreLessons?.includes(lessonKey) ? (
 				<Button
 					mode="outlined"
 					onPress={() => {
 						runInAction(() => {
 							groupSettings.ignoreLessons ??= []
-							groupSettings.ignoreLessons.push(lesson.id.toString())
+							groupSettings.ignoreLessons.push(lessonKey)
 						})
 					}}
 				>
@@ -85,8 +86,8 @@ export const EditSingleLesson = observer(function EditSingleLesson({
 				mode="outlined"
 				onPress={() => {
 					runInAction(() => {
-						delete groupSettings.subjectNamesDay[lesson.id.toString()]
-						setLessonTimeOffset(lesson.id, 0, groupSettings)
+						delete groupSettings.subjectNamesDay[lessonKey]
+						setLessonTimeOffset(lessonKey, 0, groupSettings)
 						showLesson()
 					})
 					ModalAlert.close()

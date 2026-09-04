@@ -1,4 +1,4 @@
-import { XSettings } from '@/models/settings'
+import { XSettings, getLessonKey } from '@/models/settings'
 import { ScheduleItem } from '@/services/mgik/api'
 import { ScheduleStore } from '@/services/mgik/store'
 import {
@@ -73,13 +73,14 @@ autorun(function notificationFromSchedule() {
 		return LessonNotifStore.remove()
 	}
 
-	if (!XSettings.selectedGroup) return
+	const { currentGroupId } = XSettings
+	if (!currentGroupId) return
 
 	const { overrideTimeD, useOverrideTime } = XSettings
 	const date = new Date(useOverrideTime ? overrideTimeD : Date.now())
 
 	ScheduleStore.withParams({
-		idGroup: XSettings.selectedGroup,
+		idGroup: currentGroupId,
 		isDo: undefined,
 	})
 
@@ -146,7 +147,7 @@ async function showNotification(
 	now: number,
 	period: Date | undefined,
 ) {
-	const lessonId = lesson.id.toString()
+	const lessonId = getLessonKey(lesson)
 	const lessonName = lesson.discipline
 
 	const status = scheduleStatus(

@@ -3,7 +3,7 @@ import {
 	getSubjectName,
 } from '@/components/SubjectName'
 import UpdateDate from '@/components/UpdateDate'
-import { XSettings } from '@/models/settings'
+import { XSettings, getLessonKey } from '@/models/settings'
 import { ScheduleItem } from '@/services/mgik/api'
 import { ScheduleStore } from '@/services/mgik/store'
 import { Spacings } from '@/utils/Spacings'
@@ -72,12 +72,13 @@ const DiaryLessonItem = observer(function DiaryLessonItem(
 		ModalAlert.show('Редактировать', <EditSingleLesson lesson={props.item} />)
 	}, [props.item])
 	const groupSettings = XSettings.forCurrentGroupOrThrow()
+	const lessonKey = getLessonKey(props.item)
 	return (
 		<DiaryLessonShort
 			isEdited={
 				getSubjectName({
 					discipline: props.item.discipline,
-					offsetDayId: props.item.id.toString(),
+					offsetDayId: lessonKey,
 				}) !==
 				getOverridenOrOfficalName(
 					{ discipline: props.item.discipline },
