@@ -151,7 +151,7 @@ export const EditDiaryAddLesson = observer(function EditDiaryAddLesson() {
 			>
 				<Text>
 					Добавляет новый тип занятия. Может быть полезно для допов или
-					неофициальных уроков.
+					неофициальных пар.
 				</Text>
 			</Card>
 			{typeof state.editing === 'number' ? (

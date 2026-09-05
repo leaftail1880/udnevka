@@ -53,7 +53,7 @@ export default observer(function LessonProgress({
 	}))
 
 	if (state === ScheduleState.NotStarted) {
-		if (beforeStartMs < 15 * 60 * 1000) {
+		if (beforeStartMs < 1.5 * 60 * 60 * 1000) {
 			return <Text style={textStyle}>{startsAfter}</Text>
 		}
 	} else if (state === ScheduleState.Going) {

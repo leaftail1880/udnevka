@@ -8,10 +8,12 @@ import { DiaryState } from './state'
 import { ChipLike } from '@/components/ChipLike'
 import { ScrollTextCopyable } from '@/components/ScrollTextCopyable'
 import { ScheduleItem } from '@/services/mgik/api'
+import { ModalAlert } from '@/utils/Toast'
 import { useStyles } from '@/utils/useStyles'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { XBottomTabScreenProps } from '../../../App'
 import { globalStyles } from '../../constants'
+import { EditSingleLesson } from './edit/EditSingleLesson'
 import LessonProgress from './Progress'
 import { DiaryLessonProps } from './screen'
 
@@ -29,6 +31,12 @@ export default observer(function DiaryLesson({
 		[props, i, lesson],
 	)
 
+	const onLongPress = useCallback(
+		() =>
+			ModalAlert.show('Редактировать', <EditSingleLesson lesson={lesson} />),
+		[lesson],
+	)
+
 	const cardStyle = useStyles(
 		() => ({
 			margin: Spacings.s1,
@@ -43,11 +51,23 @@ export default observer(function DiaryLesson({
 	)
 
 	return (
-		<Card style={cardStyle}>
-			<TopRow {...newProps} />
-			<Divider bold style={{ marginBottom: Spacings.s1 }} />
-			<MiddleRow {...newProps} />
-			<LessonProgress lesson={lesson} />
+		<Card style={cardStyle} onLongPress={onLongPress}>
+			<View style={globalStyles.row}>
+				<View
+					style={{ flex: 1, alignItems: 'center', marginRight: Spacings.s1 }}
+				>
+					<LessonTimeChip lesson={lesson} />
+				</View>
+				<View style={{ flex: 5 }}>
+					<TopRow {...newProps} />
+					<MiddleRow {...newProps} />
+				</View>
+			</View>
+			<Divider bold style={{ margin: Spacings.s1, marginTop: Spacings.s2 }} />
+
+			<View style={{ padding: Spacings.s1 }}>
+				<LessonProgress lesson={lesson} />
+			</View>
 		</Card>
 	)
 })
@@ -61,22 +81,9 @@ const Name = observer(function Name({
 	i,
 }: Pick<DiaryLessonProps, 'lesson' | 'i'>) {
 	return (
-		<View
-			style={[
-				globalStyles.stretch,
-				{ paddingBottom: Spacings.s1, flex: 2, width: '100%' },
-			]}
-		>
-			<View style={[styles.name, { flexWrap: 'nowrap' }]}>
-				<ChipLike>{i + 1}</ChipLike>
-				<Text style={Theme.fonts.titleMedium}>{lesson.discipline}</Text>
-			</View>
-			<View
-				style={[styles.name, { justifyContent: 'flex-end', height: '100%' }]}
-			>
-				<ChipLike>{lesson.auditoriumShortName || '?'}</ChipLike>
-				<LessonTimeChip lesson={lesson} />
-			</View>
+		<View style={[styles.name, { flexWrap: 'nowrap' }]}>
+			<ChipLike>{i + 1}</ChipLike>
+			<Text style={Theme.fonts.titleMedium}>{lesson.discipline}</Text>
 		</View>
 	)
 })
@@ -97,9 +104,36 @@ export const LessonTimeChip = observer(function Time({
 	lesson: ScheduleItem
 }) {
 	return (
-		<ChipLike>
-			{lesson.startTime.toHHMM()} - {lesson.endTime.toHHMM()}
-		</ChipLike>
+		<View
+			style={[
+				{
+					backgroundColor: Theme.colors.secondaryContainer,
+					borderRadius: Theme.roundness,
+					padding: Spacings.s1,
+				},
+			]}
+		>
+			<Text
+				style={{
+					color: Theme.colors.onSecondaryContainer,
+					fontWeight: 'bold',
+					fontSize: 16,
+				}}
+			>
+				{lesson.startTime.toHHMM()}
+			</Text>
+
+			<Text
+				style={{
+					color: Theme.colors.onSecondaryContainer,
+					fontWeight: 'bold',
+					fontSize: 16,
+					paddingLeft: Spacings.s1,
+				}}
+			>
+				{lesson.endTime.toHHMM()}
+			</Text>
+		</View>
 	)
 })
 
@@ -110,13 +144,15 @@ const MiddleRow = observer(function MiddleRow({
 }) {
 	return (
 		<>
-			{DiaryState.showLessonTheme && (
-				<ScrollTextCopyable>
-					{lesson.teacherName
-						? `Преподаватель: ${lesson.teacherName}`
-						: 'Нет преподавателя'}
-				</ScrollTextCopyable>
-			)}
+			<View style={globalStyles.stretch}>
+				<ChipLike>{lesson.auditoriumShortName || '?'}</ChipLike>
+
+				{DiaryState.showLessonTheme && (
+					<ScrollTextCopyable>
+						{lesson.teacherName || 'Нет преподавателя'}
+					</ScrollTextCopyable>
+				)}
+			</View>
 			{lesson.lessonComment && (
 				<ScrollTextCopyable>{lesson.lessonComment}</ScrollTextCopyable>
 			)}

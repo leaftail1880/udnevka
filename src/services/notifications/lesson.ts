@@ -44,10 +44,10 @@ function enabled() {
 export async function setupLessonChannel() {
 	const lessonChannelId = await notifee.createChannel({
 		id: 'lessons',
-		name: 'Уроки',
+		name: 'Пары',
 		importance: AndroidImportance.HIGH,
 		visibility: AndroidVisibility.PUBLIC,
-		description: 'Уведомления о текущих уроках',
+		description: 'Уведомления о текущих парах',
 	})
 
 	const oldNotification = (await notifee.getDisplayedNotifications()).find(
@@ -120,7 +120,9 @@ function getLessonPeriod(
 ) {
 	let period: Date | undefined
 	let date: Date
-	const notifyBeforeSeconds = 15 * 60
+	// Threshold of the size of max period that helps determine
+	// whether its period or different lessons groups at all
+	const notifyBeforeSeconds = 5 * 30 * 60
 
 	if (
 		previous &&
@@ -152,14 +154,15 @@ async function showNotification(
 	)
 
 	let title = ''
+	if (lesson.auditoriumShortName) {
+		title += lesson.auditoriumShortName
+	}
+	if (title) title += ' | '
 	title += lessonName
+
 	if (status.state === ScheduleState.Going) {
 		title += ' | '
 		title += status.remaining
-	}
-	if (lesson.auditoriumShortName) {
-		title += ' | '
-		title += lesson.auditoriumShortName
 	}
 
 	let body = ''

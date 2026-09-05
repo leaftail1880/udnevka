@@ -80,7 +80,7 @@ const MainSettings = memo(function MainSettings(
 			<SettingsJumpNavigation
 				navigation={props}
 				target={'notifs'}
-				description="О текущих уроках"
+				description="О текущих парах"
 			/>
 
 			<SettingsJumpNavigation

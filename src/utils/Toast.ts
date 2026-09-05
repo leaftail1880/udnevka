@@ -29,7 +29,7 @@ export const Toast = new (class {
 		)
 	}
 
-	private timeout: ReturnType<typeof setTimeout>
+	private timeout?: ReturnType<typeof setTimeout>
 
 	state: ToastProps | null = null
 

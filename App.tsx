@@ -48,6 +48,7 @@ import { Theme } from '@/models/theme'
 import DiaryScreen from '@/screens/day/screen'
 import LoginScreen from '@/screens/login/in'
 import SettingsScreen from '@/screens/settings/screen'
+import SubjectScreen from '@/screens/subjects/screen'
 
 type BottomTabsParams = Record<
 	Screens.LogIn | Screens.LogOut | Screens.Diary | Screens.Settings,
@@ -60,6 +61,7 @@ const ScreenIcons = {
 	[Screens.LogIn]: 'login',
 	[Screens.LogOut]: 'logout',
 	[Screens.Diary]: 'book',
+	[Screens.Subjects]: 'book',
 	[Screens.Settings]: 'cog',
 }
 
@@ -75,6 +77,7 @@ const AppRoutes = [
 		component: DiaryScreen,
 		fallback: true,
 	},
+	{ name: Screens.Subjects, component: SubjectScreen, fallback: true },
 	{
 		name: Screens.Settings,
 		component: SettingsScreen,

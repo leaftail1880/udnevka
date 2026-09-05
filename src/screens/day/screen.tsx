@@ -1,4 +1,3 @@
-import Header from '@/components/Header'
 import SelectModal from '@/components/SelectModal'
 import UpdateDate from '@/components/UpdateDate'
 import { XSettings } from '@/models/settings'
@@ -6,19 +5,30 @@ import { Theme } from '@/models/theme'
 import { ScheduleStore } from '@/services/mgik/store'
 import { runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
-import { StyleSheet, View } from 'react-native'
-import { CalendarProvider, ExpandableCalendar } from 'react-native-calendars'
+import { StyleSheet, TouchableOpacity, View } from 'react-native'
+import {
+	CalendarProvider,
+	DateData,
+	ExpandableCalendar,
+} from 'react-native-calendars'
 import { Positions } from 'react-native-calendars/src/expandableCalendar'
 import { ScrollView } from 'react-native-gesture-handler'
 import { XBottomTabScreenProps } from '../../../App'
 import { Spacings } from '../../utils/Spacings'
 import Day from './Day'
+import { EditDiaryDayScreen } from './edit/Screen'
+import { EditDiaryFAB } from './edit/Select'
 import { DiaryState } from './state'
 
 // @ts-expect-error fix for defaultProps warning
 ExpandableCalendar.defaultProps = undefined
 
 import { LocaleConfig } from 'react-native-calendars'
+import { DayProps } from 'react-native-calendars/src/calendar/day/index'
+import { MarkingProps } from 'react-native-calendars/src/calendar/day/marking/index'
+import { Text } from 'react-native-paper'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { calculateColorFromNumber } from '../../utils/colorFromNumber'
 
 // localization for react-native-calendars
 LocaleConfig.locales['ru-RU'] = {
@@ -65,21 +75,33 @@ LocaleConfig.locales['ru-RU'] = {
 LocaleConfig.defaultLocale = 'ru-RU'
 
 export default observer(function DiaryScreen(props: XBottomTabScreenProps) {
+	const insets = useSafeAreaInsets()
 	return (
 		<View style={styles.flex}>
-			<Header title="Расписание" />
-			<ScrollView
-				contentContainerStyle={styles.scrollContentContainer}
-				refreshControl={ScheduleStore.refreshControl}
-			>
-				<View style={styles.selectDayView}>
-					<SelectDay />
-				</View>
-				<View style={styles.day}>
-					{ScheduleStore.fallback || <Day {...props} />}
-				</View>
-				<UpdateDate store={ScheduleStore} />
-			</ScrollView>
+			<View
+				style={{
+					height: insets.top,
+					backgroundColor: Theme.colors.navigationBar,
+				}}
+			/>
+			{/* <Header title="Расписание" /> */}
+			<EditDiaryFAB />
+			{!DiaryState.edit ? (
+				<ScrollView
+					contentContainerStyle={styles.scrollContentContainer}
+					refreshControl={ScheduleStore.refreshControl}
+				>
+					<View style={styles.selectDayView}>
+						<SelectDay />
+					</View>
+					<View style={styles.day}>
+						{ScheduleStore.fallback || <Day {...props} />}
+					</View>
+					<UpdateDate store={ScheduleStore} />
+				</ScrollView>
+			) : (
+				ScheduleStore.fallback || <EditDiaryDayScreen />
+			)}
 		</View>
 	)
 })
@@ -119,6 +141,9 @@ const SelectDay = observer(function SelectDay() {
 			textDisabledColor: Theme.colors.onSurfaceDisabled,
 			dayTextColor: Theme.colors.onBackground,
 			expandableKnobColor: Theme.colors.secondaryContainer,
+			textDayHeaderFontWeight: 'bold',
+			textMonthFontWeight: 'bold',
+			textMonthFontSize: 14,
 		}
 		return (
 			<CalendarProvider
@@ -140,7 +165,25 @@ const SelectDay = observer(function SelectDay() {
 					key={Theme.key + Object.values(theme).join(',')}
 					firstDay={1}
 					openThreshold={0}
+					dayComponent={CustomDay}
 					closeThreshold={0}
+					markedDates={
+						ScheduleStore.result
+							? (ScheduleStore.result.reduce(
+									(acc, e) => {
+										const key = e.date
+											.toYYYYMMDD()
+											.split('.')
+											.reverse()
+											.join('-')
+										acc[key] ??= { badgeText: 0 }
+										acc[key].badgeText++
+										return acc
+									},
+									{} as Record<string, { badgeText: number }>,
+								) as unknown as Record<string, MarkingProps>)
+							: {}
+					}
 					horizontal
 					initialPosition={Positions.CLOSED}
 					allowShadow
@@ -164,6 +207,86 @@ const SelectDay = observer(function SelectDay() {
 			}
 		/>
 	)
+})
+
+const CustomDay = ({ date, state, marking, onPress }: DayProps) => {
+	// marking can contain your custom badge data passed via markedDates
+	const number = (marking as unknown as { badgeText: number })?.badgeText
+	const hasBadge = typeof number !== 'undefined'
+
+	let colors
+	if (hasBadge) {
+		colors = calculateColorFromNumber(number)
+	}
+
+	// Determine background and text color based on calendar state
+	let backgroundColor: string
+	let textColor: string
+
+	if (state === 'selected') {
+		backgroundColor = Theme.colors.surfaceDisabled
+		textColor = Theme.colors.onSurfaceDisabled
+	} else if (state === 'today') {
+		backgroundColor = Theme.colors.secondaryContainer
+		textColor = Theme.colors.onSecondaryContainer
+	} else if (state === 'disabled') {
+		backgroundColor = 'transparent'
+		textColor = Theme.colors.onSurfaceDisabled
+	} else {
+		backgroundColor = 'transparent'
+		textColor = Theme.colors.onBackground
+	}
+
+	return (
+		<TouchableOpacity
+			onPress={() => onPress?.(date as unknown as DateData)}
+			style={[dayStyles.container, { backgroundColor }]}
+		>
+			<Text style={[dayStyles.dayText, { color: textColor }]}>
+				{(date as unknown as DateData).day}
+			</Text>
+			{hasBadge && (
+				<View
+					style={[
+						dayStyles.badge,
+						colors ? { backgroundColor: colors.backgroundColor } : {},
+					]}
+				>
+					<Text
+						style={[
+							dayStyles.badgeText,
+							colors ? { color: colors.textColor } : {},
+						]}
+					>
+						{number}
+					</Text>
+				</View>
+			)}
+		</TouchableOpacity>
+	)
+}
+
+const dayStyles = StyleSheet.create({
+	container: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		height: 35,
+		borderRadius: 20,
+		width: 32,
+	},
+	dayText: {
+		fontSize: 14,
+		fontWeight: 'bold',
+	},
+	badge: {
+		borderRadius: 4,
+		paddingHorizontal: 3,
+		paddingVertical: 1,
+		marginTop: 1,
+	},
+	badgeText: {
+		fontSize: 10,
+	},
 })
 
 export type DiaryLessonProps = {

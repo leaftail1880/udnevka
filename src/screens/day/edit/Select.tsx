@@ -23,9 +23,9 @@ const editLesson = jumpTo(EditDiaryScreen.EditLesson)
 export const EditDiarySelect = observer(function EditDiarySelect() {
 	return (
 		<View>
-			<Button onPress={addLesson}>Добавить урок</Button>
-			<Button onPress={editLesson}>Изменить урок</Button>
-			<Button onPress={reorderLessons}>Изменить порядок уроков</Button>
+			<Button onPress={addLesson}>Добавить пару</Button>
+			<Button onPress={editLesson}>Изменить пару</Button>
+			<Button onPress={reorderLessons}>Изменить порядок пар</Button>
 		</View>
 	)
 })

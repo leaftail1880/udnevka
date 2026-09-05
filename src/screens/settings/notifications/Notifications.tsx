@@ -47,8 +47,8 @@ export default observer(function Notifications(
 				/>
 
 				<SwitchSetting
-					title={'Расписание уроков'}
-					description="Уведомления о текущих уроках"
+					title={'Расписание пар'}
+					description="Уведомления о текущих парах"
 					setting="lessonNotifications"
 					disabled={!XSettings.notificationsEnabled}
 				/>
@@ -75,7 +75,7 @@ export default observer(function Notifications(
 					<Warning
 						enabled={true}
 						label="Фоновые задачи выключены"
-						description="Уведомления об уроках не будут работать"
+						description="Уведомления о парах могут не работать"
 						onPress={() => {}}
 					/>
 				)}

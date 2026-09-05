@@ -53,7 +53,6 @@ export enum Screens {
 	LogOut = 'Выход',
 	LogIn = 'Вход',
 	Diary = 'Дневник',
-	Totals = 'Оценки',
-	TotalsN = 'Оценки ',
+	Subjects = 'Предметы',
 	Settings = 'Настройки',
 }
