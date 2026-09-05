@@ -174,6 +174,11 @@ async function showNotification(
 		body += `Прошло ${status.elapsed}`
 	}
 
+	if (body) {
+		body += ' '
+	}
+	body += lesson.building
+
 	try {
 		if (!foregroundServiceRegistered) {
 			notifee.registerForegroundService(() => new Promise(() => {}))

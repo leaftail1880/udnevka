@@ -1,4 +1,6 @@
 import { AsyncStore } from '@/models/async.store'
+import { autorun } from 'mobx'
+import { XSettings } from '../../models/settings'
 import { ScheduleClient } from './api'
 
 export const scheduleClient = new ScheduleClient()
@@ -24,3 +26,16 @@ export const ScheduleStore = new AsyncStore(
 	false,
 	false,
 )
+
+autorun(() => {
+	const { currentGroupId } = XSettings
+
+	console.log(
+		'Current group changed',
+		currentGroupId,
+		'updating schedule store...',
+	)
+	ScheduleStore.withParams({
+		idGroup: currentGroupId,
+	})
+})

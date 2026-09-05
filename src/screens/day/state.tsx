@@ -68,15 +68,6 @@ export const DiaryState = new (class {
 	}
 })()
 
-autorun(() => {
-	const { currentGroupId } = XSettings
-	if (!currentGroupId) return
-
-	ScheduleStore.withParams({
-		idGroup: currentGroupId,
-	})
-})
-
 function weekValue(text: string, week: Date) {
 	const day = Date.week(week)[0].toYYYYMMDD()
 	return {

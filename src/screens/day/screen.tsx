@@ -28,6 +28,7 @@ import { DayProps } from 'react-native-calendars/src/calendar/day/index'
 import { MarkingProps } from 'react-native-calendars/src/calendar/day/marking/index'
 import { Text } from 'react-native-paper'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Header from '../../components/Header'
 import { calculateColorFromNumber } from '../../utils/colorFromNumber'
 
 // localization for react-native-calendars
@@ -78,13 +79,13 @@ export default observer(function DiaryScreen(props: XBottomTabScreenProps) {
 	const insets = useSafeAreaInsets()
 	return (
 		<View style={styles.flex}>
-			<View
+			{/* <View
 				style={{
 					height: insets.top,
 					backgroundColor: Theme.colors.navigationBar,
 				}}
-			/>
-			{/* <Header title="Расписание" /> */}
+			/> */}
+			<Header title="Расписание" />
 			<EditDiaryFAB />
 			{!DiaryState.edit ? (
 				<ScrollView

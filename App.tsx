@@ -61,7 +61,7 @@ const ScreenIcons = {
 	[Screens.LogIn]: 'login',
 	[Screens.LogOut]: 'logout',
 	[Screens.Diary]: 'book',
-	[Screens.Subjects]: 'book',
+	[Screens.Subjects]: 'account-card',
 	[Screens.Settings]: 'cog',
 }
 
@@ -234,6 +234,21 @@ const Navigation = observer(function Navigation() {
 		if (ScheduleStore.fallback) {
 			innerFallback = ScheduleStore.fallback
 		}
+	} else {
+		innerFallback = (
+			<View
+				style={{
+					justifyContent: 'center',
+					alignContent: 'center',
+					alignItems: 'center',
+					height: '80%',
+				}}
+			>
+				<Text style={[{ textAlign: 'center' }, Theme.fonts.titleMedium]}>
+					Выберите группу
+				</Text>
+			</View>
+		)
 	}
 
 	let FallbackScreen: React.FC | undefined

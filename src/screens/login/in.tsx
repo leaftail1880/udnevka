@@ -19,7 +19,7 @@ export default observer(function LoginScreen({
 }) {
 	return (
 		<View style={{ height: '100%' }}>
-			<Header title={mode === 'initial' ? 'Выбор группы' : 'Добавить группу'} />
+			{mode === 'initial' && <Header title="Выбор группы" />}
 			{DropdownDataStore.fallback || <LoginContent mode={mode} />}
 		</View>
 	)
@@ -47,7 +47,6 @@ const LoginContent = observer(function LoginContent({
 	const canSave = !!selectedGroupId
 
 	const saveSelection = () => {
-		console.log({ selectedGroupId })
 		if (!selectedGroupId) return
 		runInAction(() => {
 			if (mode === 'initial') {
@@ -55,7 +54,6 @@ const LoginContent = observer(function LoginContent({
 					selectedGroupIds: [selectedGroupId],
 					currentGroupId: selectedGroupId,
 				})
-				console.log(XSettings.currentGroupId)
 			} else {
 				if (!XSettings.selectedGroupIds.includes(selectedGroupId)) {
 					XSettings.save({

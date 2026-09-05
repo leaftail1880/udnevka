@@ -62,3 +62,24 @@ Date.week = date =>
 			(_, i) =>
 				new Date(date.getTime() - (date.getDayFromMonday() - i) * dayInMs),
 		) as ReturnType<typeof Date.week>
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/unbound-method
+Map.prototype.getOrInsert ??= function (key, defaultValue) {
+	if (!this.has(key)) {
+		this.set(key, defaultValue)
+	}
+	return this.get(key)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/unbound-method
+Map.prototype.getOrInsertComputed ??= function (key, callbackFunction) {
+	if (!this.has(key)) {
+		this.set(key, callbackFunction(key))
+	}
+	return this.get(key)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/unbound-method
+WeakMap.prototype.getOrInsertComputed ??= Map.prototype.getOrInsertComputed
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/unbound-method
+WeakMap.prototype.getOrInsert ??= Map.prototype.getOrInsert
