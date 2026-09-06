@@ -1,4 +1,5 @@
 // @ts-check
+import withBuildProperties from 'expo-build-properties'
 import {
 	AndroidConfig,
 	withAndroidManifest,
@@ -6,7 +7,7 @@ import {
 	withGradleProperties,
 } from 'expo/config-plugins'
 
-const version = '0.29.0'
+const version = '0.30.0'
 const slug = 'udnevka'
 const name = 'Udnevka'
 const projectId = '50974a14-e146-4aac-8aa5-265811d17456'
@@ -67,7 +68,7 @@ const Config = {
 			'expo-status-bar',
 			'react-native-notify-kit',
 			'@react-native-vector-icons/material-design-icons',
-			// 'expo-build-properties',
+			'expo-build-properties',
 			['@sentry/react-native', sentry],
 			[
 				'expo-splash-screen',
@@ -112,19 +113,19 @@ const Config = {
 
 Config.expo.plugins = Config.expo.plugins?.filter(Boolean)
 
-// Config.expo = withBuildProperties(Config.expo, {
-// 	android: {
-// 		// enableMinifyInReleaseBuilds: true,
-// 		// enableShrinkResourcesInReleaseBuilds: true,
-// 	},
-// })
+Config.expo = withBuildProperties(Config.expo, {
+ 	android: {
+ 		 enableMinifyInReleaseBuilds: true,
+ 		 enableShrinkResourcesInReleaseBuilds: true,
+ 	},
+})
 
 Config.expo = withGradleProperties(Config.expo, config => {
 	config.modResults.push(
 		{
 			type: 'property',
 			key: 'reactNativeArchitectures',
-			value: 'armeabi-v7a,arm64-v8a', //,x86,x86_64
+			value: 'arm64-v8a', //,x86,x86_64
 		},
 		{
 			type: 'property',
