@@ -23,7 +23,13 @@ import * as Sentry from '@sentry/react-native'
 import { toJS } from 'mobx'
 import { observer } from 'mobx-react-lite'
 import { useRef } from 'react'
-import { Easing, Pressable, useWindowDimensions, View } from 'react-native'
+import {
+	Easing,
+	Pressable,
+	StyleSheet,
+	useWindowDimensions,
+	View,
+} from 'react-native'
 import { Icon, PaperProvider } from 'react-native-paper'
 import {
 	SafeAreaProvider,
@@ -96,10 +102,6 @@ const AppRoutes = [
 
 const Tab = createBottomTabNavigator<BottomTabsParams>()
 
-// Custom Tab Bar Component using BottomNavigation.Bar
-import { StyleSheet } from 'react-native' // Ensure these are imported
-// Note: You can still use TouchableRipple if you prefer, but ensure style={{flex:1, justifyContent:'center'}}
-
 const CustomTabBar = observer(function CustomTabBar({
 	navigation,
 	state,
@@ -146,13 +148,13 @@ const CustomTabBar = observer(function CustomTabBar({
 						key={route.key}
 						onPress={onPress}
 						onLongPress={onLongPress}
-						style={styles.tabItem} // Defined below
+						style={tabBarStyles.tabItem} // Defined below
 					>
 						<>
 							{isFocused && (
 								<View
 									style={[
-										styles.activeIndicator,
+										tabBarStyles.activeIndicator,
 										{ backgroundColor: Theme.colors.secondaryContainer },
 									]}
 								/>
@@ -176,8 +178,7 @@ const CustomTabBar = observer(function CustomTabBar({
 	)
 })
 
-// Add these styles outside the component
-const styles = StyleSheet.create({
+const tabBarStyles = StyleSheet.create({
 	tabItem: {
 		flex: 1,
 		alignItems: 'center',
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
 	activeIndicator: {
 		position: 'absolute',
 		top: 8,
-		bottom: 34, // Adjust to center relative to icon
+		bottom: 34,
 		width: 70,
 		borderRadius: 35,
 	},

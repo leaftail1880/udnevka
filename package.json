@@ -61,7 +61,7 @@
 		"mobx-react-lite": "^4.1.1",
 		"react": "19.2.8",
 		"react-native": "0.86.3",
-		"react-native-calendars": "^1.1313.0",
+		"react-native-calendars": "patch:react-native-calendars@npm%3A1.1314.0#~/.yarn/patches/react-native-calendars-npm-1.1314.0-50d34005e4.patch",
 		"react-native-gesture-handler": "~2.32.0",
 		"react-native-logs": "^5.5.0",
 		"react-native-mmkv": "^4.0.0",

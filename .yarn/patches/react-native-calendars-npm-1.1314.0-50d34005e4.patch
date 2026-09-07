@@ -1,0 +1,69 @@
+diff --git a/src/expandableCalendar/index.js b/src/expandableCalendar/index.js
+index bea00e0168a338eb19d3eee2ddd7ee8d0470b745..6ae1b3ad14798e992ced74409c375a0c89957745 100644
+--- a/src/expandableCalendar/index.js
++++ b/src/expandableCalendar/index.js
+@@ -2,20 +2,20 @@ import first from 'lodash/first';
+ import isFunction from 'lodash/isFunction';
+ import isNumber from 'lodash/isNumber';
+ import throttle from 'lodash/throttle';
++import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
++import { AccessibilityInfo, Animated, Image, PanResponder, Text, TouchableOpacity, View } from 'react-native';
+ import XDate from 'xdate';
+-import React, { useContext, useRef, useState, useEffect, useCallback, useMemo, useImperativeHandle, forwardRef } from 'react';
+-import { AccessibilityInfo, PanResponder, Animated, View, Text, Image, TouchableOpacity } from 'react-native';
++import Calendar from '../calendar';
++import CalendarList from '../calendar-list';
++import constants from '../commons/constants';
++import WeekDaysNames from '../commons/WeekDaysNames';
+ import { page } from '../dateutils';
+ import { parseDate, toMarkingFormat } from '../interface';
++import { CalendarNavigationTypes, UpdateSources } from './commons';
++import Context from './Context';
+ import styleConstructor, { KNOB_CONTAINER_HEIGHT } from './style';
+-import WeekDaysNames from '../commons/WeekDaysNames';
+-import Calendar from '../calendar';
+-import CalendarList from '../calendar-list';
+ import Week from './week';
+ import WeekCalendar from './WeekCalendar';
+-import Context from './Context';
+-import constants from '../commons/constants';
+-import { UpdateSources, CalendarNavigationTypes } from './commons';
+ export var Positions;
+ (function (Positions) {
+     Positions["CLOSED"] = "closed";
+@@ -61,9 +61,17 @@ const ExpandableCalendar = forwardRef((props, ref) => {
+     horizontal = true, calendarStyle, theme, style: propsStyle, firstDay = 0, onDayPress, hideArrows, onPressArrowLeft, onPressArrowRight, renderArrow, testID, ...others } = props;
+     const [screenReaderEnabled, setScreenReaderEnabled] = useState(false);
+     const [headerHeight, setHeaderHeight] = useState(0);
+-    const onHeaderLayout = useCallback(({ nativeEvent: { layout: { height } } }) => {
+-        setHeaderHeight(height || DEFAULT_HEADER_HEIGHT);
+-    }, []);
++    // Fix to calendar being transparent
++    const shouldMeasureHeader = useRef(true);
++    const onHeaderLayout = useCallback(({ nativeEvent: { layout: {height} }}) => {
++        const _height = (height || DEFAULT_HEADER_HEIGHT) + 5;
++        if (height !== headerHeight) {
++          setHeaderHeight(_height);
++        }
++        shouldMeasureHeader.current = false;
++      },
++      [headerHeight]
++    );
+     /** Date */
+     const getYear = (date) => {
+         const d = new XDate(date);
+@@ -411,7 +419,13 @@ const ExpandableCalendar = forwardRef((props, ref) => {
+         return (<CalendarList testID={`${testID}.calendarList`} horizontal={horizontal} firstDay={firstDay} calendarStyle={calendarStyle} onHeaderLayout={onHeaderLayout} {...others} current={date} theme={themeObject} ref={calendarList} onDayPress={_onDayPress} onVisibleMonthsChange={onVisibleMonthsChange} pagingEnabled scrollEnabled={isOpen} hideArrows={shouldHideArrows} onPressArrowLeft={_onPressArrowLeft} onPressArrowRight={_onPressArrowRight} hideExtraDays={!horizontal && isOpen} renderArrow={_renderArrow} staticHeader numberOfDays={numberOfDays} headerStyle={_headerStyle} timelineLeftInset={timelineLeftInset} context={_context}/>);
+     };
+     return (<View testID={testID} style={containerStyle}>
+-      {screenReaderEnabled ? (<Calendar testID={`${testID}.calendarAccessible`} {...others} theme={themeObject} onHeaderLayout={onHeaderLayout} onDayPress={_onDayPress} hideExtraDays renderArrow={_renderArrow}/>) : (<Animated.View testID={`${testID}.expandableContainer`} ref={wrapper} style={wrapperStyle} {...panResponder.panHandlers}>
++      {screenReaderEnabled ? (<Calendar testID={`${testID}.calendarAccessible`} {...others} theme={themeObject} onHeaderLayout={onHeaderLayout} onDayPress={_onDayPress} hideExtraDays renderArrow={_renderArrow}/>) : (<Animated.View
++          testID={`${testID}.expandableContainer`}
++          ref={wrapper}
++          style={wrapperStyle}
++          onLayout={shouldMeasureHeader.current ? onHeaderLayout : undefined}
++          {...panResponder.panHandlers}
++        >
+           {renderCalendarList()}
+           {renderWeekCalendar()}
+           {!hideKnob && renderKnob()}

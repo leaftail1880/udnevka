@@ -11935,23 +11935,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-calendars@npm:^1.1313.0":
-  version: 1.1313.0
-  resolution: "react-native-calendars@npm:1.1313.0"
+"react-native-calendars@npm:^1.1314.0":
+  version: 1.1314.0
+  resolution: "react-native-calendars@npm:1.1314.0"
   dependencies:
     hoist-non-react-statics: "npm:^3.3.1"
     lodash: "npm:^4.17.15"
     memoize-one: "npm:^5.2.1"
     moment: "npm:^2.29.4"
     prop-types: "npm:^15.5.10"
-    react-native-safe-area-context: "npm:4.5.0"
     react-native-swipe-gestures: "npm:^1.0.5"
     recyclerlistview: "npm:^4.0.0"
     xdate: "npm:^0.8.0"
   dependenciesMeta:
     moment:
       optional: true
-  checksum: 10c0/a1c7325755ebac65bfed8224c1308ab430fa5dea43c95fed027eb23745b075f6ec1906cce18d95a3f5dcd127860aebebddb3a040408a281071e3f6d0cd19c5b9
+  checksum: 10c0/1a934bfff5f3f754028948f1ef303d529fe7e7c9802a21e5ef803bedc7493650e54be023145c1efb61eebf580e532544108fdd01257870c4d8ebf30fcd330fbb
   languageName: node
   linkType: hard
 
@@ -14064,7 +14063,7 @@ __metadata:
     react: "npm:19.2.8"
     react-dom: "npm:19.2.3"
     react-native: "npm:0.86.3"
-    react-native-calendars: "npm:^1.1313.0"
+    react-native-calendars: "npm:^1.1314.0"
     react-native-gesture-handler: "npm:~2.32.0"
     react-native-logs: "npm:^5.5.0"
     react-native-mmkv: "npm:^4.0.0"
