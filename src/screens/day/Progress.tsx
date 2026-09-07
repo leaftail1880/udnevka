@@ -84,14 +84,16 @@ function scheduleStatus(start: number, end: number, now = Date.now()) {
 	const total = separateTime(end - start)
 	const progress = 100 - Math.ceil(((end - now) * 100) / (end - start))
 
+	const elapsed1 = toTime(0, beforeEnd.hours, beforeEnd.minutes, beforeEnd.seconds)
+	const elapsed2 = toTime(total.hours, total.minutes, total.seconds)
 	return {
 		beforeStartMs,
 		startsAfter: `Начнется через ${toTime(beforeStart.hours, beforeStart.minutes, beforeStart.seconds)}`,
-		elapsed: `${total.hours >= 1 ? toTime(0, beforeEnd.hours, beforeEnd.minutes + 1) : toTime(beforeEnd.hours, beforeEnd.minutes + 1)}/${toTime(...(total.minutes + 1 >= 60 ? [total.hours + 1, 0] : [total.hours, total.minutes + 1]))}`,
+		elapsed: `${elapsed1}/${elapsed2}`,
 		remaining: toTime(
 			total.hours - beforeEnd.hours,
 			total.minutes - beforeEnd.minutes,
-			total.seconds - beforeEnd.seconds,
+			60 - beforeEnd.seconds,
 		),
 		progress,
 		state:
