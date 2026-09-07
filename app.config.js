@@ -1,5 +1,5 @@
 // @ts-check
-import withBuildProperties from 'expo-build-properties'
+import {withBuildProperties} from 'expo-build-properties'
 import {
 	AndroidConfig,
 	withAndroidManifest,
