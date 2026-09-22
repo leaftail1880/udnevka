@@ -3,7 +3,7 @@ import { Spacings } from '@/utils/Spacings'
 import { useState } from 'react'
 import { View } from 'react-native'
 import { Button, Text } from 'react-native-paper'
-import { RequestError, RequestErrorReason } from '../utils/RequestError'
+import { NetworkErrorReason, stringifyNetworkErrorLike } from '../utils/network'
 
 interface ErrorHandlerProps {
 	error: [number, Error]
@@ -18,7 +18,7 @@ export default function ErrorHandler({
 	name,
 }: ErrorHandlerProps) {
 	const [more, setMore] = useState<boolean>(false)
-	const errorString = RequestError.stringify(error[1])
+	const errorString = stringifyNetworkErrorLike(error[1])
 	return (
 		<View
 			style={{
@@ -37,7 +37,7 @@ export default function ErrorHandler({
 				Ошибка{error[0] ? ` (${error[0]})` : ''}
 			</Text>
 			<Text>При загрузке данных {name}</Text>
-			{errorString === RequestErrorReason.noConnection && <Text>Нет сети</Text>}
+			{errorString === NetworkErrorReason.noConnection && <Text>Нет сети</Text>}
 			{more && <Text selectable>{errorString}</Text>}
 
 			<View style={{ gap: Spacings.s2, margin: Spacings.s2 }}>

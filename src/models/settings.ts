@@ -57,6 +57,8 @@ class SettingsStore {
 	overrideTimeD = Date.now()
 	useOverrideTime = false
 
+	networkTimeout = 10000
+
 	constructor() {
 		makeAutoObservable(this, {
 			fullname: false,
@@ -77,6 +79,7 @@ class SettingsStore {
 				'groupOverrides',
 				'overrideTimeD',
 				'useOverrideTime',
+				'networkTimeout'
 			],
 		})
 	}

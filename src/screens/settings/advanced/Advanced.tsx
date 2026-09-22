@@ -1,3 +1,4 @@
+import NumberInputSetting from '@/components/NumberInput'
 import { SelectTime } from '@/components/SelectTime'
 import { Size } from '@/components/Size'
 import SwitchSetting from '@/components/SwitchSetting'
@@ -50,6 +51,17 @@ export default observer(function Appearance() {
 							inputMode="start"
 						/>
 					</View>
+					<NumberInputSetting
+						label="Макс время ожидания ответа"
+
+						description='Сколько миллисекунд приложению ждать ответа сервера (расписания мгик, сервер обновлений и тд) до того как показать ошибку'
+						value={XSettings.networkTimeout}
+						onChange={v =>
+							runInAction(() => {
+								XSettings.save({ networkTimeout: v })
+							})
+						}
+					/>
 				</View>
 			</List.Section>
 			<List.Section title="Хранилище">

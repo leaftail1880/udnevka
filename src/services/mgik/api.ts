@@ -1,5 +1,8 @@
 // ========== Output type definitions (transformed data) ==========
 
+import { XSettings } from "../../models/settings"
+import { abortSignalTimeout } from "../../utils/network"
+
 /**
  * Client type (usually determines whether the schedule is for a specific group or an individual).
  */
@@ -255,9 +258,12 @@ export class ScheduleClient {
 		const url = new URL('ajax-dropdown-style', this.baseURL)
 		url.search = new URLSearchParams(params).toString()
 
+		const signal = abortSignalTimeout(XSettings.networkTimeout)
 		const response = await fetch(url.toString(), {
 			method: 'GET',
 			headers: { Accept: 'application/json' },
+			// @ts-expect-error nodejs vs react types conflict
+			signal
 		})
 
 		if (!response.ok) {

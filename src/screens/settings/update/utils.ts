@@ -5,7 +5,7 @@ import * as ExpoSharing from 'expo-sharing'
 import { runInAction } from 'mobx'
 import { Platform } from 'react-native'
 import { Logger } from '../../../constants'
-import { RequestError } from '../../../utils/RequestError'
+import { stringifyNetworkErrorLike } from '../../../utils/network'
 import { ModalAlert } from '../../../utils/Toast'
 import State from './state'
 
@@ -18,7 +18,7 @@ async function handleErrorsAndDisplayInModal(task: () => Promise<void>) {
 	try {
 		await task()
 	} catch (e) {
-		ModalAlert.show('Ошибка при установке', RequestError.stringify(e), true)
+		ModalAlert.show('Ошибка при установке', stringifyNetworkErrorLike(e ), true)
 		// eslint-disable-next-line no-console
 		console.error(e)
 	}

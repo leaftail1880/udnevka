@@ -1,5 +1,5 @@
 import { AsyncStore } from '@/models/async.store'
-import { autorun } from 'mobx'
+import { autorun, runInAction } from 'mobx'
 import { XSettings } from '../../models/settings'
 import { ScheduleClient } from './api'
 
@@ -11,7 +11,6 @@ export const DropdownDataStore = new AsyncStore(
 	'getDropdownData',
 	'данных для выбора группы',
 	{},
-	() => [], // no additional deps
 	false,
 	true, // skip error messages
 )
@@ -22,8 +21,7 @@ export const ScheduleStore = new AsyncStore(
 	'getSchedule',
 	'расписания',
 	{},
-	() => [],
-	false,
+	true,
 	false,
 )
 
@@ -35,7 +33,11 @@ autorun(() => {
 		currentGroupId,
 		'updating schedule store...',
 	)
-	ScheduleStore.withParams({
-		idGroup: currentGroupId,
+	runInAction(() => {
+
+		ScheduleStore.withParams({
+			idGroup: currentGroupId,
+			isDo: undefined
+		})
 	})
 })

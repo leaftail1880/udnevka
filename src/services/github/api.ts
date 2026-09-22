@@ -59,5 +59,5 @@ class GithubApi {
 const API = new GithubApi()
 
 export const Github = {
-	Releases: new AsyncStore(API, 'getReleases', 'списка версий', {}, () => []),
+	Releases: new AsyncStore(API, 'getReleases', 'списка версий', {}, ),
 }
