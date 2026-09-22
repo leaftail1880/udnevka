@@ -14,7 +14,7 @@ export const LessonProgressStore = new (class {
 	currentLesson = 0
 	constructor() {
 		makeAutoObservable(this)
-		setInterval(() => runInAction(() => (this.now = Date.now())), 1000)
+		if (!__TEST__) setInterval(() => runInAction(() => (this.now = Date.now())), 1000)
 	}
 })()
 const store = LessonProgressStore
@@ -77,7 +77,7 @@ enum ScheduleState {
 	Ended,
 }
 
-function scheduleStatus(start: number, end: number, now = Date.now()) {
+export function scheduleStatus(start: number, end: number, now = Date.now()) {
 	const beforeStartMs = start - now
 	const beforeStart = separateTime(beforeStartMs)
 	const beforeEnd = separateTime(now - start)
@@ -93,7 +93,7 @@ function scheduleStatus(start: number, end: number, now = Date.now()) {
 		remaining: toTime(
 			total.hours - beforeEnd.hours,
 			total.minutes - beforeEnd.minutes,
-			60 - beforeEnd.seconds,
+			total.seconds -  beforeEnd.seconds,
 		),
 		progress,
 		state:
