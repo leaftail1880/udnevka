@@ -145,7 +145,7 @@ const MiddleRow = observer(function MiddleRow({
 	return (
 		<>
 			<View style={globalStyles.stretch}>
-				<View style={globalStyles.row}>
+				<View style={[globalStyles.row, {rowGap: Spacings.s2}]}>
 					<ChipLike>{lesson.lessonType}</ChipLike>
 					<ChipLike>{lesson.auditoriumName || '?'}</ChipLike>
 				</View>
