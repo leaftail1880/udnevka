@@ -72,7 +72,7 @@ export default observer(function LessonProgress({
 	}
 })
 
-enum ScheduleState {
+export enum ScheduleState {
 	NotStarted,
 	Going,
 	Ended,

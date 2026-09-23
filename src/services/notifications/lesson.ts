@@ -10,6 +10,7 @@ import notifee, {
 	AndroidImportance,
 	AndroidVisibility,
 } from 'react-native-notify-kit'
+import { ScheduleState, scheduleStatus } from 'screens/day/Progress'
 
 let foregroundServiceRegistered = false
 
@@ -211,50 +212,4 @@ async function showNotification(
 		LessonNotifStore.id = notificationId
 		LessonNotifStore.currentLesson = lessonId
 	})
-}
-
-enum ScheduleState {
-	NotStarted,
-	Going,
-	Ended,
-}
-
-function scheduleStatus(start: number, end: number, now = Date.now()) {
-	const beforeStartMs = start - now
-	const beforeStart = separateTime(beforeStartMs)
-	const beforeEnd = separateTime(now - start)
-	const total = separateTime(end - start)
-	const progress = 100 - Math.ceil(((end - now) * 100) / (end - start))
-
-	return {
-		beforeStartMs,
-		startsAfter: `Начнется через ${toTime(beforeStart.hours, beforeStart.minutes, beforeStart.seconds)}`,
-		elapsed: `${total.hours >= 1 ? toTime(0, beforeEnd.hours, beforeEnd.minutes + 1) : toTime(beforeEnd.hours, beforeEnd.minutes + 1)}/${toTime(...(total.minutes + 1 >= 60 ? [total.hours + 1, 0] : [total.hours, total.minutes + 1]))}`,
-		remaining: toTime(
-			total.hours - beforeEnd.hours,
-			total.minutes - beforeEnd.minutes,
-			total.seconds - beforeEnd.seconds,
-		),
-		progress,
-		state:
-			now < start
-				? ScheduleState.NotStarted
-				: now <= end
-					? ScheduleState.Going
-					: ScheduleState.Ended,
-	}
-}
-
-function separateTime(ms: number) {
-	const hours = Math.floor(ms / (1000 * 60 * 60))
-	const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
-	const seconds = Math.floor((ms % (1000 * 60)) / 1000)
-	return { hours, minutes, seconds }
-}
-
-function toTime(...args: number[]) {
-	return args
-		.filter((e, i) => (i === 0 ? e !== 0 : true))
-		.map(e => e.toString().padStart(2, '0'))
-		.join(':')
 }
