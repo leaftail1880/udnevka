@@ -2,13 +2,7 @@ import ErrorHandler from '@/components/ErrorHandler'
 import Loading from '@/components/Loading'
 import { Toast } from '@/utils/Toast'
 import { makeReloadPersistable } from '@/utils/makePersistable'
-import {
-	autorun,
-	flow,
-	makeAutoObservable,
-	observable,
-	toJS
-} from 'mobx'
+import { autorun, flow, makeAutoObservable, observable, toJS } from 'mobx'
 import { RefreshControl } from 'react-native'
 import { Logger } from '../constants'
 import { stringifyNetworkErrorLike } from '../utils/network'
@@ -194,7 +188,7 @@ export class AsyncStore<
 
 		// Reload on reload request
 		autorun(function apiStoreReload() {
-			store.log("Params changed, reloading...")
+			store.log('Params changed, reloading...')
 			store.update(toJS(store.params))
 		})
 	}
@@ -259,8 +253,6 @@ export class AsyncStore<
 	}
 
 	private *update(params: FnParams | undefined) {
-		
-
 		const request = this.api[this.method]
 		if (typeof request !== 'function') {
 			Logger.warn(
@@ -273,14 +265,11 @@ export class AsyncStore<
 			return
 		}
 
-		if (this.defaultParams && Object.keys(this.defaultParams).length >= 1)
+		if (this.defaultParams)
 			params = { ...this.defaultParams, ...params } as FnParams
 
 		if (!params) return this.log('Request update, params are falsy')
-			this.log(
-			'Request update, params:',
-			params,
-		)
+		this.log('Request update, params:', params)
 
 		const key = String(this.method) + '-' + JSON.stringify(params)
 		const firstTime = !firstTimeCacheUsedFor.has(key)

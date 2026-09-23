@@ -20,7 +20,7 @@ export const ScheduleStore = new AsyncStore(
 	scheduleClient,
 	'getSchedule',
 	'расписания',
-	{},
+	undefined,
 	true,
 	false,
 )
@@ -33,11 +33,12 @@ autorun(() => {
 		currentGroupId,
 		'updating schedule store...',
 	)
-	runInAction(() => {
-
-		ScheduleStore.withParams({
-			idGroup: currentGroupId,
-			isDo: undefined
+	if (currentGroupId) {
+		runInAction(() => {
+			ScheduleStore.withParams({
+				idGroup: currentGroupId,
+				isDo: undefined,
+			})
 		})
-	})
+	}
 })
