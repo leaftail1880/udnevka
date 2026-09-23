@@ -1,7 +1,5 @@
-import { XSettings } from '@/models/settings'
-import { ScheduleStore } from '@/services/mgik/store'
 import { Spacings } from '@/utils/Spacings'
-import { autorun, makeAutoObservable } from 'mobx'
+import { makeAutoObservable } from 'mobx'
 import { View } from 'react-native'
 import { Text } from 'react-native-paper'
 import { LANG, globalStyles } from '../../constants'

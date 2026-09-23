@@ -145,7 +145,10 @@ const MiddleRow = observer(function MiddleRow({
 	return (
 		<>
 			<View style={globalStyles.stretch}>
-				<ChipLike>{lesson.auditoriumName || '?'}</ChipLike>
+				<View style={globalStyles.row}>
+					<ChipLike>{lesson.lessonType}</ChipLike>
+					<ChipLike>{lesson.auditoriumName || '?'}</ChipLike>
+				</View>
 
 				{DiaryState.showLessonTheme && (
 					<ScrollTextCopyable>
