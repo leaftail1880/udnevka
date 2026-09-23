@@ -14,7 +14,8 @@ export const LessonProgressStore = new (class {
 	currentLesson = 0
 	constructor() {
 		makeAutoObservable(this)
-		if (!__TEST__) setInterval(() => runInAction(() => (this.now = Date.now())), 1000)
+		if (!__TEST__)
+			setInterval(() => runInAction(() => (this.now = Date.now())), 1000)
 	}
 })()
 const store = LessonProgressStore
@@ -82,18 +83,30 @@ export function scheduleStatus(start: number, end: number, now = Date.now()) {
 	const beforeStart = separateTime(beforeStartMs)
 	const beforeEnd = separateTime(now - start)
 	const total = separateTime(end - start)
+	const remaining = separateTime((end - start) - (now - start))
 	const progress = 100 - Math.ceil(((end - now) * 100) / (end - start))
 
-	const elapsed1 = toTime(beforeEnd.hours, beforeEnd.minutes, beforeEnd.seconds)
-	const elapsed2 = toTime(total.hours, total.minutes, total.seconds)
+	const elapsed1 = toTime(
+		total.hours,
+		beforeEnd.hours,
+		beforeEnd.minutes,
+		beforeEnd.seconds,
+	)
+	const elapsed2 = toTime(
+		total.hours,
+		total.hours,
+		total.minutes,
+		total.seconds,
+	)
 	return {
 		beforeStartMs,
-		startsAfter: `Начнется через ${toTime(beforeStart.hours, beforeStart.minutes, beforeStart.seconds)}`,
+		startsAfter: `Начнется через ${toTime(total.hours, beforeStart.hours, beforeStart.minutes, beforeStart.seconds)}`,
 		elapsed: `${elapsed1}/${elapsed2}`,
 		remaining: toTime(
-			total.hours - beforeEnd.hours,
-			total.minutes - beforeEnd.minutes,
-			total.seconds - beforeEnd.seconds,
+			total.hours,
+			remaining.hours,
+			remaining.minutes,
+			remaining.seconds,
 		),
 		progress,
 		state:
@@ -112,11 +125,11 @@ function separateTime(ms: number) {
 	return { hours, minutes, seconds }
 }
 
-function toTime(...args: number[]) {
-	return args
-		.filter((e, i) => (i === 0 ? e !== 0 : true))
-		.map(e => e.toString().padStart(2, '0'))
-		.join(':')
+function toTime(totalFirstHour: number, ...args: number[]) {
+	// If the total time is less then 1 hour and first digit is 0, so skip it
+	if (totalFirstHour === 0) args.shift()
+
+	return args.map(e => e.toString().padStart(2, '0')).join(':')
 }
 
 const styles = StyleSheet.create({

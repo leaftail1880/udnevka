@@ -24,7 +24,7 @@ describe('scheduleStatus', () => {
 		{
 		  "elapsed": "01:10:00/01:30:00",
 		  "progress": 77,
-		  "remaining": "20:00",
+		  "remaining": "00:20:00",
 		}
 	`)
 	})
@@ -43,7 +43,7 @@ describe('scheduleStatus', () => {
 		{
 		  "elapsed": "01:10:10/01:30:00",
 		  "progress": 77,
-		  "remaining": "20:-10",
+		  "remaining": "00:19:50",
 		}
 	`)
 	})
@@ -99,7 +99,7 @@ describe('scheduleStatus', () => {
 		).toMatchInlineSnapshot(`
 		{
 		  "beforeStartMs": 290000,
-		  "startsAfter": "Начнется через 04:50",
+		  "startsAfter": "Начнется через 00:04:50",
 		  "state": 0,
 		}
 	`)
