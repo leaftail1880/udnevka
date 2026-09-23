@@ -1,5 +1,5 @@
 // @ts-check
-import {withBuildProperties} from 'expo-build-properties'
+import { withBuildProperties } from 'expo-build-properties'
 import {
 	AndroidConfig,
 	withAndroidManifest,
@@ -18,6 +18,7 @@ const IS_DEV = !!process.env.DEV
 const id = IS_DEV ? 'com.leaftail1880.udnevka.dev' : 'com.leaftail1880.udnevka'
 
 const sentry = {
+	url: 'https://sentry.io/',
 	organization: 'leaftail1880',
 	project: 'udnevka',
 }
@@ -69,7 +70,7 @@ const Config = {
 			'react-native-notify-kit',
 			'@react-native-vector-icons/material-design-icons',
 			'expo-build-properties',
-			['@sentry/react-native', sentry],
+			['@sentry/react-native/expo', sentry],
 			[
 				'expo-splash-screen',
 				{
@@ -114,10 +115,10 @@ const Config = {
 Config.expo.plugins = Config.expo.plugins?.filter(Boolean)
 
 Config.expo = withBuildProperties(Config.expo, {
- 	android: {
- 		 enableMinifyInReleaseBuilds: true,
- 		 enableShrinkResourcesInReleaseBuilds: true,
- 	},
+	android: {
+		enableMinifyInReleaseBuilds: true,
+		enableShrinkResourcesInReleaseBuilds: true,
+	},
 })
 
 Config.expo = withGradleProperties(Config.expo, config => {
