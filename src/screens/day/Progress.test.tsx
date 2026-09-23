@@ -29,6 +29,25 @@ describe('scheduleStatus', () => {
 	`)
 	})
 
+	it('should calculate schedule status with seconds', () => {
+		expect(
+			pick(
+				scheduleStatus(
+					new Date(2026, 1, 1, 10).getTime(),
+					new Date(2026, 1, 1, 11, 30).getTime(),
+					new Date(2026, 1, 1, 11, 10, 10).getTime(),
+				),
+				['progress', 'remaining', 'elapsed'],
+			),
+		).toMatchInlineSnapshot(`
+		{
+		  "elapsed": "01:10:10/01:30:00",
+		  "progress": 77,
+		  "remaining": "20:-10",
+		}
+	`)
+	})
+
 	it('should calculate schedule status', () => {
 		expect(
 			pick(

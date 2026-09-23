@@ -84,7 +84,7 @@ export function scheduleStatus(start: number, end: number, now = Date.now()) {
 	const total = separateTime(end - start)
 	const progress = 100 - Math.ceil(((end - now) * 100) / (end - start))
 
-	const elapsed1 = toTime(0, beforeEnd.hours, beforeEnd.minutes, beforeEnd.seconds)
+	const elapsed1 = toTime(beforeEnd.hours, beforeEnd.minutes, beforeEnd.seconds)
 	const elapsed2 = toTime(total.hours, total.minutes, total.seconds)
 	return {
 		beforeStartMs,
@@ -93,7 +93,7 @@ export function scheduleStatus(start: number, end: number, now = Date.now()) {
 		remaining: toTime(
 			total.hours - beforeEnd.hours,
 			total.minutes - beforeEnd.minutes,
-			total.seconds -  beforeEnd.seconds,
+			total.seconds - beforeEnd.seconds,
 		),
 		progress,
 		state:
