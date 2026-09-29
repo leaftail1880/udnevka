@@ -155,8 +155,8 @@ async function showNotification(
 	)
 
 	let title = ''
-	if (lesson.auditoriumShortName) {
-		title += lesson.auditoriumShortName
+	if (lesson.auditoriumName) {
+		title += lesson.auditoriumName
 	}
 	if (title) title += ' | '
 	title += lessonName
@@ -175,10 +175,10 @@ async function showNotification(
 		body += `Прошло ${status.elapsed}`
 	}
 
-	if (body) {
-		body += ' '
-	}
-	body += lesson.building
+	// if (body) {
+		// body += ' '
+	// }
+	// body += lesson.building
 
 	try {
 		if (!foregroundServiceRegistered) {

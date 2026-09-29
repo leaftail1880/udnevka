@@ -127,15 +127,13 @@ function fromCalendar(calendar: string) {
 }
 
 const onDateChanged = (d: string): void => {
-	setTimeout(() => {
-		d = fromCalendar(d)
-		runInAction(() => {
-			DiaryState.day = d
-			const [day, month, year] = d.split('.').map(e => parseInt(e))
-			const weekDate = new Date(`${year}-${month}-${day}T00:00:00.000Z`)
-			DiaryState.week = weekDate
-		})
-	}, 100)
+	d = fromCalendar(d)
+	runInAction(() => {
+		DiaryState.day = d
+		const [day, month, year] = d.split('.').map(e => parseInt(e))
+		const weekDate = new Date(`${year}-${month}-${day}T00:00:00.000Z`)
+		DiaryState.week = weekDate
+	})
 }
 
 const SelectDay = observer(function SelectDay() {
@@ -186,6 +184,11 @@ const SelectDay = observer(function SelectDay() {
 						DataSource.current.schedule.result
 							? (DataSource.current.schedule.result.reduce(
 									(acc, e) => {
+										// Any positive subgroup should not be counted
+										// because subgroups are meant for the same lesson
+										// but different people. so user will only see one in count
+										if (e.subgroup !== 0 && e.subgroup !== 1) return acc 
+
 										const key = e.date
 											.toYYYYMMDD()
 											.split('.')
@@ -285,7 +288,7 @@ const dayStyles = StyleSheet.create({
 	container: {
 		alignItems: 'center',
 		justifyContent: 'center',
-		height: 35,
+		height: 33,
 		borderRadius: 20,
 		width: 32,
 	},
@@ -297,7 +300,7 @@ const dayStyles = StyleSheet.create({
 		borderRadius: 4,
 		paddingHorizontal: 3,
 		paddingVertical: 1,
-		marginTop: 1,
+		marginTop: 0,
 	},
 	badgeText: {
 		fontSize: 10,

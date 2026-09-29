@@ -1,11 +1,18 @@
 // Pure parsing logic for the NHMT timetable sheet. No network / library imports,
-// so it can be tested directly against rows produced by read-excel-file.
+// so it can be tested directly against rows produced by `xlsx`.
 
-import type { CellValue, SheetData } from 'read-excel-file/universal'
-import { DropdownData, Faculty, Group, ScheduleItem } from '../abstract-api-types'
+import {
+	DropdownData,
+	Faculty,
+	Group,
+	ScheduleItem,
+} from '../abstract-api-types'
 
-// ========== Output types (same shape as the edu.mgik.org client) ==========
+// ========== Cell / sheet types (replacing read-excel-file/universal) ==========
 
+/** Values produced by `XLSX.utils.sheet_to_json({ header: 1, defval: null })`. */
+export type CellValue = string | number | boolean | Date | null | undefined
+export type SheetData = CellValue[][]
 
 // ========== Parsed template (weekly recurring timetable) ==========
 
@@ -82,7 +89,7 @@ function cleanRoom(raw: string): string {
 		.replace(/\s+/g, ' ')
 		.trim()
 	// A lone building letter ("У", "П") means the room number was never filled in.
-	return /^[УП]$/i.test(room) ? '' : room
+	return /^[А-ЯЁ]$/i.test(room) ? '' : room
 }
 
 function roomParts(room: string): { short: string; building: string } {
@@ -90,22 +97,16 @@ function roomParts(room: string): { short: string; building: string } {
 	if (corp) {
 		return { short: room.match(/\d+/)?.[0] ?? room, building: `корп${corp[1]}` }
 	}
-	const letter = room.match(/^([УП])\s*-?\s*\d/i)
+	const letter = room.match(/^([А-ЯЁ])\s*-?\s*\d/i)
 	return {
 		short: room.match(/\d+/)?.[0] ?? room,
 		building: letter ? letter[1].toUpperCase() : '',
 	}
 }
 
-export interface CellEntry {
-	discipline: string
-	teacherName: string
-	auditoriumName: string
-	auditoriumShortName: string
-	building: string
-}
+export type CellEntry = NonNullable<ReturnType<typeof buildEntry>>
 
-function buildEntry(lines: string[]): CellEntry | null {
+function buildEntry(lines: string[]) {
 	const clean = lines.map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean)
 	if (clean.length === 0) return null
 
@@ -124,7 +125,8 @@ function buildEntry(lines: string[]): CellEntry | null {
 		auditoriumName,
 		auditoriumShortName: short,
 		building,
-	}
+		subgroup: 0,
+	} satisfies Partial<ScheduleItem>
 }
 
 /**
@@ -169,8 +171,14 @@ export function parseCell(cell: CellValue): CellEntry[] {
 	const result: CellEntry[] = []
 	const l = buildEntry(left)
 	const r = buildEntry(right)
-	if (l) result.push(l)
-	if (r) result.push(r)
+	if (l) {
+		l.subgroup = 1
+		result.push(l)
+	}
+	if (r) {
+		r.subgroup = 2
+		result.push(r)
+	}
 	return result
 }
 
@@ -263,15 +271,13 @@ export function parseTimetable(rows: SheetData): ParsedTimetable {
 				continue
 			}
 			const parsed = parseCell(cell)
-			const split = parsed.length > 1
-			parsed.forEach((e, idx) => {
+			parsed.forEach((e) => {
 				entries.push({
 					groupId: group.id,
 					dayOfWeek,
 					lessonNumber,
 					start: time.start,
 					end: time.end,
-					subgroup: split ? idx + 1 : 0,
 					...e,
 				})
 			})
@@ -307,6 +313,8 @@ function combine(date: Date, hhmm: string): Date {
 	)
 }
 
+const DAY_MS = 86400000
+
 export function expandSchedule(
 	parsed: ParsedTimetable,
 	groupId: number,
@@ -315,7 +323,7 @@ export function expandSchedule(
 ): ScheduleItem[] {
 	const start = startOfDay(from ?? mondayOf(new Date()))
 	const end = startOfDay(
-		to ?? new Date(mondayOf(start).getTime() + 6 * 86400000),
+		to ?? new Date(mondayOf(start).getTime() + (7 + 7 + 6) * DAY_MS),
 	)
 	if (end < start) return []
 
@@ -336,7 +344,7 @@ export function expandSchedule(
 		const dow = isoDow(cursor)
 		const date = startOfDay(cursor)
 		const week =
-			Math.round((mondayOf(date).getTime() - semMonday) / (7 * 86400000)) + 1
+			Math.round((mondayOf(date).getTime() - semMonday) / (7 * DAY_MS)) + 1
 		const ymd =
 			date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()
 
@@ -358,7 +366,7 @@ export function expandSchedule(
 				groupId: e.groupId,
 				subgroup: e.subgroup,
 				teacherComment: '',
-				lessonComment: ''
+				lessonComment: '',
 			})
 		}
 		cursor.setDate(cursor.getDate() + 1)
