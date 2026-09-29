@@ -1,6 +1,8 @@
 // Pure parsing logic for the NHMT timetable sheet. No network / library imports,
 // so it can be tested directly against rows produced by read-excel-file.
 
+import { CellValue, SheetData } from "read-excel-file/universal"
+
 // ========== Output types (same shape as the edu.mgik.org client) ==========
 
 export interface ClientType {
@@ -72,9 +74,6 @@ export interface ScheduleParams {
 
 // ========== Parsed template (weekly recurring timetable) ==========
 
-export type Cell = string | number | boolean | Date | null | undefined
-export type Row = Cell[]
-
 export interface TemplateEntry {
 	groupId: number
 	dayOfWeek: number
@@ -125,7 +124,7 @@ const SPLIT_GAP = 8
 
 // ========== Helpers ==========
 
-const str = (c: Cell): string => (c === null || c === undefined ? '' : String(c))
+const str = (c: CellValue | null): string => (c === null || c === undefined ? '' : String(c))
 
 const pad2 = (n: number) => String(n).padStart(2, '0')
 
@@ -199,7 +198,7 @@ function buildEntry(lines: string[]): CellEntry | null {
  *   Инкина СН                 У406 каб\r\n
  *                             Данилкина ЕГ
  */
-export function parseCell(cell: Cell): CellEntry[] {
+export function parseCell(cell: CellValue): CellEntry[] {
 	const text = str(cell)
 	if (!text.trim()) return []
 
@@ -239,7 +238,7 @@ export function parseCell(cell: Cell): CellEntry[] {
 
 // ========== Main parser ==========
 
-export function parseTimetable(rows: Row[]): ParsedTimetable {
+export function parseTimetable(rows: SheetData): ParsedTimetable {
 	const timeHeaderIdx = rows.findIndex(r => /^время/i.test(str(r?.[2]).trim()))
 	const groupRowIdx = rows.findIndex(r => str(r?.[2]).trim() === 'Группа')
 	if (timeHeaderIdx < 0 || groupRowIdx < 0) {
@@ -314,7 +313,12 @@ export function parseTimetable(rows: Row[]): ParsedTimetable {
 			LESSON_TIME_SLOTS[lessonNumber - 1] ?? { start: '', end: '' }
 
 		for (const group of groups) {
-			const parsed = parseCell(row[group.id])
+			
+			const cell = row[group.id]
+			if (!cell) {
+				continue
+			}
+			const parsed = parseCell(cell)
 			const split = parsed.length > 1
 			parsed.forEach((e, idx) => {
 				entries.push({

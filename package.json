@@ -78,6 +78,7 @@
 		"react-native-webview": "13.16.1",
 		"react-native-worklets": "0.10.1",
 		"react-test-renderer": "19.2.8",
+		"read-excel-file": "^9.3.10",
 		"reanimated-color-picker": "^4.1.1"
 	},
 	"devDependencies": {
