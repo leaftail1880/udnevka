@@ -3,14 +3,14 @@ import { ScrollView, View } from 'react-native'
 import { DataTable, Text } from 'react-native-paper'
 import Header from '../../components/Header'
 import { Screens } from '../../constants'
-import { ScheduleStore } from '../../services/mgik/store'
+import { DataSource } from '../../models/data-source.store'
 import { Spacings } from '../../utils/Spacings'
 
 export default observer(function SubjectsScreen() {
 	return (
 		<>
 			<Header title={Screens.Subjects} />
-			{ScheduleStore.result ? (
+			{DataSource.current.schedule.result ? (
 				<ScrollView>
 					<DataTable>
 						<DataTable.Row style={{ flex: 5 }}>
@@ -22,7 +22,7 @@ export default observer(function SubjectsScreen() {
 							</DataTable.Title>
 						</DataTable.Row>
 						{[
-							...ScheduleStore.result
+							...DataSource.current.schedule.result
 								.reduce((acc, p) => {
 									acc
 										.getOrInsertComputed(p.teacherName, () => new Map())
@@ -54,7 +54,7 @@ export default observer(function SubjectsScreen() {
 					</DataTable>
 				</ScrollView>
 			) : (
-				ScheduleStore.fallback
+				DataSource.current.schedule.fallback
 			)}
 		</>
 	)

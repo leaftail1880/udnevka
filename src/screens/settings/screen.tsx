@@ -15,7 +15,6 @@ import MicroUpdate from './update/micro-update'
 import UpdatesScreen from './update/screen'
 
 import SelectModal from '@/components/SelectModal'
-import { DropdownDataStore } from '@/services/mgik/store'
 import { Spacings } from '@/utils/Spacings'
 import * as Application from 'expo-application'
 import { memo } from 'react'
@@ -116,30 +115,40 @@ const MainSettings = memo(function MainSettings(
 	)
 })
 
+import { DataSource } from '@/models/data-source.store'
+import { parseDataSourceId, parseGroupId } from '@/models/group-id'
+
 const SelectGroup = observer(function SelectGroup() {
 	if (!XSettings.currentGroupId) {
-		return null // Should not happen if logged in
+		return null
 	}
 
-	return (
-		DropdownDataStore.fallback || (
-			<SelectModal
-				data={XSettings.selectedGroupIds.map(groupId => {
-					const group = DropdownDataStore.result!.groups.find(
-						g => g.id === groupId,
-					)
-					return {
-						value: groupId.toString(),
-						label: group ? group.name : `Группа ${groupId}`,
-					}
-				})}
-				mode="list.item"
-				value={XSettings.currentGroupId.toString()}
-				onSelect={group =>
-					XSettings.save({ currentGroupId: Number(group.value) })
-				}
-				label={'Группа'}
-			/>
+	const options = XSettings.selectedGroupIds.map(groupId => {
+		const dataSourceId = parseDataSourceId(groupId)
+		const rawGroupId = parseGroupId(groupId)
+
+		const dataSource = DataSource.get(dataSourceId)
+		const group = dataSource.groups.result?.groups.find(
+			g => g.id === rawGroupId,
 		)
+
+		const sourceName = DataSource.registry.get(dataSourceId).name
+
+		return {
+			value: groupId,
+			label: group
+				? `${group.name} (${sourceName})`
+				: `${sourceName}: ${rawGroupId}`,
+		}
+	})
+
+	return (
+		<SelectModal
+			data={options}
+			mode="list.item"
+			value={XSettings.currentGroupId}
+			onSelect={group => XSettings.save({ currentGroupId: group.value })}
+			label={'Группа'}
+		/>
 	)
 })

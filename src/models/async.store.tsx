@@ -2,7 +2,14 @@ import ErrorHandler from '@/components/ErrorHandler'
 import Loading from '@/components/Loading'
 import { Toast } from '@/utils/Toast'
 import { makeReloadPersistable } from '@/utils/makePersistable'
-import { autorun, flow, makeAutoObservable, observable, toJS } from 'mobx'
+import {
+	action,
+	autorun,
+	flow,
+	makeAutoObservable,
+	observable,
+	toJS,
+} from 'mobx'
 import { RefreshControl } from 'react-native'
 import { Logger } from '../constants'
 import { stringifyNetworkErrorLike } from '../utils/network'
@@ -11,11 +18,6 @@ export type AsyncMethod = (
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	arg: any,
 ) => Promise<unknown>
-
-/**
- * Selects only accepted api methods
- */
-export type FunctionsFromObject<O extends object> = FilterObject<O, AsyncMethod>
 
 /**
  * Return type of the useAPI hook
@@ -28,21 +30,6 @@ export type AsyncState<Result> = (
 	refreshControl: React.JSX.Element
 	updateDate: string
 }
-
-/**
- * Different from Partial<T> is that it requires to define ALL keys
- * but any of them can be undefined
- */
-type Optional<T> = { [Key in Exclude<keyof T, symbol>]: T[Key] | undefined }
-
-export type AdditionalDeps = (
-	| object
-	| null
-	| undefined
-	| string
-	| boolean
-	| number
-)[]
 
 // ==================== Disk-backed cache ====================
 
@@ -90,7 +77,7 @@ export class AsyncCacheStore {
 	constructor() {
 		makeAutoObservable(this, {}, { autoBind: true })
 		makeReloadPersistable(this, {
-			name: 'async-cache',
+			name: 'async-cache-v2',
 			properties: [
 				{
 					key: 'cache',
@@ -128,16 +115,14 @@ const firstTimeCacheUsedFor = new Set<string>()
 // ==================== AsyncStore ====================
 
 export class AsyncStore<
-	Source extends object,
-	MethodName extends keyof FunctionsFromObject<Source>,
-	Fn = FunctionsFromObject<Source>[MethodName],
-	FnReturn = Fn extends AsyncMethod ? Awaited<ReturnType<Fn>> : never,
-	FnParams = Fn extends AsyncMethod ? Optional<Parameters<Fn>[0]> : never,
-	DefaultParams = Record<'', never>,
+	Fn extends AsyncMethod,
+	FnReturn = Awaited<ReturnType<Fn>>,
+	FnParams = Parameters<Fn>[0],
+	DefaultParams = Record<never, never>,
 > {
 	constructor(
-		private readonly api: Source,
-		private readonly method: MethodName,
+		private readonly id: string,
+		private readonly method: Fn,
 		public readonly name: string,
 		private readonly defaultParams?: DefaultParams,
 		public debug = false,
@@ -155,7 +140,7 @@ export class AsyncStore<
 			| 'loading'
 			| 'params'
 			| 'method'
-			| 'api'
+			| 'id'
 			| 'log'
 			| 'refreshControlLoadingOverride'
 		>(
@@ -171,14 +156,14 @@ export class AsyncStore<
 				update: flow,
 				error: observable.ref,
 				params: observable.struct,
-				withParams: true,
+				withParams: action,
 				loading: true,
 				refreshControlLoadingOverride: true,
 				log: false,
 				debug: false,
 				name: false,
 				method: false,
-				api: false,
+				id: false,
 			},
 			{ autoBind: true, name: this.name },
 		)
@@ -253,14 +238,10 @@ export class AsyncStore<
 	}
 
 	private *update(params: FnParams | undefined) {
-		const request = this.api[this.method]
+		const request = this.method
 		if (typeof request !== 'function') {
 			Logger.warn(
-				'Request update, method ' +
-					(typeof this.method === 'symbol'
-						? 'Symbol::' + this.method.description
-						: (this.method as string)) +
-					' of api is not a function!',
+				'Request update, method ' + this.id + ' of api is not a function!',
 			)
 			return
 		}
@@ -271,7 +252,7 @@ export class AsyncStore<
 		if (!params) return this.log('Request update, params are falsy')
 		this.log('Request update, params:', params)
 
-		const key = String(this.method) + '-' + JSON.stringify(params)
+		const key = String(this.id) + '-' + JSON.stringify(params)
 		const firstTime = !firstTimeCacheUsedFor.has(key)
 		const cachedEntry = asyncCache.get(key)
 
@@ -292,7 +273,7 @@ export class AsyncStore<
 		}
 
 		try {
-			const data: FnReturn = yield request.call(this.api, params)
+			const data: FnReturn = yield request(params)
 			asyncCache.set(key, data)
 			this.result = data
 			this.updateDate = `Дата обновления: ${new Date().toLocaleTimeString()}`
@@ -315,6 +296,8 @@ export class AsyncStore<
 				).toLocaleTimeString()} (кэш, ошибка: ${stringifyNetworkErrorLike(error)})`
 			} else {
 				Logger.error('Failed to update для', this.name, error)
+				if (typeof error === 'object' && error && 'stack' in error)
+					Logger.error(error.stack)
 				this.error = error as Error
 			}
 		} finally {

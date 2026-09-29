@@ -7,10 +7,10 @@ import { DiaryState } from './state'
 
 import { ChipLike } from '@/components/ChipLike'
 import { ScrollTextCopyable } from '@/components/ScrollTextCopyable'
-import { ScheduleItem } from '@/services/mgik/api'
 import { ModalAlert } from '@/utils/Toast'
 import { useStyles } from '@/utils/useStyles'
 import { useCallback, useMemo } from 'react'
+import { ScheduleItem } from 'services/abstract-api-types'
 import { XBottomTabScreenProps } from '../../../App'
 import { globalStyles } from '../../constants'
 import { EditSingleLesson } from './edit/EditSingleLesson'
@@ -145,7 +145,7 @@ const MiddleRow = observer(function MiddleRow({
 	return (
 		<>
 			<View style={globalStyles.stretch}>
-				<View style={[globalStyles.row, {rowGap: Spacings.s2}]}>
+				<View style={[globalStyles.row, { gap: Spacings.s1 }]}>
 					<ChipLike>{lesson.lessonType}</ChipLike>
 					<ChipLike>{lesson.auditoriumName || '?'}</ChipLike>
 				</View>

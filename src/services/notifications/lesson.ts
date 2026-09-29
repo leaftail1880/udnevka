@@ -1,6 +1,4 @@
 import { XSettings, getLessonKey } from '@/models/settings'
-import { ScheduleItem } from '@/services/mgik/api'
-import { ScheduleStore } from '@/services/mgik/store'
 import {
 	clearBackgroundInterval,
 	setBackgroundInterval,
@@ -11,6 +9,8 @@ import notifee, {
 	AndroidVisibility,
 } from 'react-native-notify-kit'
 import { ScheduleState, scheduleStatus } from 'screens/day/Progress'
+import { ScheduleItem } from "services/abstract-api-types"
+import { DataSource } from '../../models/data-source.store'
 
 let foregroundServiceRegistered = false
 
@@ -80,7 +80,7 @@ autorun(function notificationFromSchedule() {
 	const { overrideTimeD, useOverrideTime } = XSettings
 	const date = new Date(useOverrideTime ? overrideTimeD : Date.now())
 
-	const { result } = ScheduleStore
+	const { result } = DataSource.current.schedule
 	if (!result) return
 
 	const dayLessons = result.filter(

@@ -2,6 +2,7 @@ import { HoursMinutes } from '@/components/SelectTime'
 import { makeAutoObservable, runInAction } from 'mobx'
 import { Platform } from 'react-native'
 import { makeReloadPersistable } from '../utils/makePersistable'
+import { createGroupId, parseDataSourceId } from './group-id'
 
 export interface CustomSubjectMeeting {
 	dayIndex: number
@@ -47,11 +48,13 @@ class SettingsStore {
 	newDatePicker = true
 
 	// Group selection
-	selectedGroupIds: number[] = []
-	currentGroupId?: number = undefined
+	selectedGroupIds: string[] = []
+	currentGroupId?: string = undefined
 
-	// Per-group overrides
-	groupOverrides: Record<number, GroupSettings> = {}
+	// Remembered university selection
+	dataSourceId = 'mgik'
+
+	groupOverrides: Record<string, GroupSettings> = {}
 
 	// Time override for debugging
 	overrideTimeD = Date.now()
@@ -76,12 +79,47 @@ class SettingsStore {
 				'newDatePicker',
 				'selectedGroupIds',
 				'currentGroupId',
+				'dataSourceId',
 				'groupOverrides',
 				'overrideTimeD',
 				'useOverrideTime',
-				'networkTimeout'
+				'networkTimeout',
 			],
-		})
+		}).then(() =>
+			runInAction(() => {
+				this.migrateLegacyGroupIds()
+			}),
+		)
+	}
+
+	private migrateLegacyGroupIds() {
+		const legacySelected = this.selectedGroupIds as unknown as (
+			| string
+			| number
+		)[]
+		this.selectedGroupIds = legacySelected.map(id =>
+			typeof id === 'number' ? createGroupId('mgik', id) : id,
+		)
+
+		const legacyCurrent = this.currentGroupId as unknown as
+			| string
+			| number
+			| undefined
+
+		if (typeof legacyCurrent === 'number') {
+			this.currentGroupId = createGroupId('mgik', legacyCurrent)
+		}
+
+		if (this.currentGroupId) {
+			this.dataSourceId = parseDataSourceId(this.currentGroupId)
+		}
+
+		const migratedOverrides: Record<string, GroupSettings> = {}
+		for (const [key, value] of Object.entries(this.groupOverrides)) {
+			const normalizedKey = key.includes('-') ? key : createGroupId('mgik', key)
+			migratedOverrides[normalizedKey] = value
+		}
+		this.groupOverrides = migratedOverrides
 	}
 
 	save(value: Partial<Omit<this, 'save'>>) {
@@ -97,7 +135,7 @@ class SettingsStore {
 		}
 	}
 
-	forGroup(groupId: number): GroupSettings {
+	forGroup(groupId: string): GroupSettings {
 		const defaultSettings: GroupSettings = {
 			customSubjects: [],
 			lessonOrder: {},

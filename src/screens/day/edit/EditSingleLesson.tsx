@@ -1,7 +1,6 @@
 import { HoursMinutes, SelectTime } from '@/components/SelectTime'
 import { LANG } from '@/constants'
 import { XSettings, getLessonKey } from '@/models/settings'
-import { ScheduleItem } from '@/services/mgik/api'
 import { Spacings } from '@/utils/Spacings'
 import { ModalAlert } from '@/utils/Toast'
 import { runInAction } from 'mobx'
@@ -9,6 +8,7 @@ import { observer } from 'mobx-react-lite'
 import { useState } from 'react'
 import { View } from 'react-native'
 import { Button, Text, TextInput } from 'react-native-paper'
+import { ScheduleItem } from "services/abstract-api-types"
 import { setLessonTimeOffset } from './state'
 
 export const EditSingleLesson = observer(function EditSingleLesson({

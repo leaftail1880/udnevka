@@ -4,8 +4,6 @@ import {
 } from '@/components/SubjectName'
 import UpdateDate from '@/components/UpdateDate'
 import { XSettings, getLessonKey } from '@/models/settings'
-import { ScheduleItem } from '@/services/mgik/api'
-import { ScheduleStore } from '@/services/mgik/store'
 import { Spacings } from '@/utils/Spacings'
 import { ModalAlert } from '@/utils/Toast'
 import { runInAction } from 'mobx'
@@ -18,6 +16,8 @@ import {
 	View,
 } from 'react-native'
 import { Button, Text } from 'react-native-paper'
+import { ScheduleItem } from "services/abstract-api-types"
+import { DataSource } from '../../../models/data-source.store'
 import { DiaryState } from '../state'
 import { EditSingleLesson } from './EditSingleLesson'
 import { DiaryLessonShort } from './ReorderLessons'
@@ -27,7 +27,7 @@ export const EditDiaryEditLesson = observer(function EditDiaryEditLesson() {
 })
 
 const Screen = observer(function Screen() {
-	const schedule = ScheduleStore.result!
+	const schedule = DataSource.current.schedule.result!
 	const dayLessons = schedule.filter(
 		item => item.date.toYYYYMMDD() === DiaryState.day,
 	)

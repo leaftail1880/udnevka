@@ -1,76 +1,11 @@
 // Pure parsing logic for the NHMT timetable sheet. No network / library imports,
 // so it can be tested directly against rows produced by read-excel-file.
 
-import { CellValue, SheetData } from 'read-excel-file/universal'
+import type { CellValue, SheetData } from 'read-excel-file/universal'
+import { DropdownData, Faculty, Group, ScheduleItem } from '../abstract-api-types'
 
 // ========== Output types (same shape as the edu.mgik.org client) ==========
 
-export interface ClientType {
-	type: number
-}
-
-export interface FormOfEducation {
-	id: number
-	/** e.g. "Дневное отделение". */
-	name: string
-}
-
-export interface Course {
-	course: number
-}
-
-/** In the NHMT sheet a "faculty" is a specialty suffix of the group name (e.g. "ИС"). */
-export interface Faculty {
-	id: number
-	name: string
-}
-
-export interface Group {
-	/** Column index of the group in the sheet (stable for a given file). */
-	id: number
-	/** Full group code (e.g. "26-ИО-129"); falls back to the short name if the sheet has none. */
-	name: string
-	/** Short name from the "Группа" row (e.g. "1-ИС"). */
-	shortName: string
-	course: number
-	facultyId: number
-}
-
-export interface DropdownData {
-	clientTypes: ClientType[]
-	formsOfEducation: FormOfEducation[]
-	courses: Course[]
-	faculties: Faculty[]
-	groups: Group[]
-}
-
-export interface ScheduleItem {
-	id: number
-	discipline: string
-	teacherName: string
-	auditoriumName: string
-	auditoriumShortName: string
-	building: string
-	/** Not present in the NHMT sheet, always ''. Kept for shape compatibility. */
-	lessonType: string
-	week: number
-	date: Date
-	dayOfWeek: number
-	lessonNumber: number
-	startTime: Date
-	endTime: Date
-	groupId: number
-	/** 0 = whole group, 1/2 = left/right half of a split cell. */
-	subgroup: number
-}
-
-export interface ScheduleParams {
-	idGroup: number | string
-	/** Inclusive range start. Default: Monday of the current week. */
-	from?: Date
-	/** Inclusive range end. Default: Sunday of the week of `from`. */
-	to?: Date
-}
 
 // ========== Parsed template (weekly recurring timetable) ==========
 
@@ -422,6 +357,8 @@ export function expandSchedule(
 				endTime: combine(date, e.end),
 				groupId: e.groupId,
 				subgroup: e.subgroup,
+				teacherComment: '',
+				lessonComment: ''
 			})
 		}
 		cursor.setDate(cursor.getDate() + 1)

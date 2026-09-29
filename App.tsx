@@ -42,7 +42,6 @@ import Loading from '@/components/Loading'
 import Toast from '@/components/Modal'
 
 // Services
-import { ScheduleStore } from '@/services/mgik/store'
 import '@/services/notifications/setup'
 import { SENTRY_ROUTING } from '@/services/sentry'
 
@@ -55,6 +54,7 @@ import DiaryScreen from '@/screens/day/screen'
 import LoginScreen from '@/screens/login/in'
 import SettingsScreen from '@/screens/settings/screen'
 import SubjectScreen from '@/screens/subjects/screen'
+import { DataSource } from './src/models/data-source.store'
 
 type BottomTabsParams = Record<
 	Screens.LogIn | Screens.LogOut | Screens.Diary | Screens.Settings,
@@ -232,8 +232,8 @@ const Navigation = observer(function Navigation() {
 	// Determine if we need a fallback screen (loading schedule)
 	let innerFallback: React.ReactNode | undefined
 	if (XSettings.currentGroupId !== undefined) {
-		if (ScheduleStore.fallback) {
-			innerFallback = ScheduleStore.fallback
+		if (DataSource.current.schedule.fallback) {
+			innerFallback = DataSource.current.schedule.fallback
 		}
 	} else {
 		innerFallback = (

@@ -3,8 +3,6 @@ import { getSubjectName } from '@/components/SubjectName'
 import { globalStyles } from '@/constants'
 import { GroupSettings, XSettings, getLessonKey } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { ScheduleItem } from '@/services/mgik/api'
-import { ScheduleStore } from '@/services/mgik/store'
 import { Spacings } from '@/utils/Spacings'
 import { makeAutoObservable, runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
@@ -21,6 +19,8 @@ import ReorderableList, {
 	ReorderableListReorderEvent,
 	useReorderableDrag,
 } from 'react-native-reorderable-list'
+import { ScheduleItem } from "services/abstract-api-types"
+import { DataSource } from '../../../models/data-source.store'
 import { LessonTimeChip } from '../Lesson'
 import { DAY_NAMES_SHORT, DiaryState } from '../state'
 import { setLessonTimeOffset } from './state'
@@ -49,7 +49,7 @@ function replaceItems<T>(array: T[], from: number, to: number): T[] {
 }
 
 export const EditDiaryReorderLessons = observer(function DiaryEditDay() {
-	const schedule = ScheduleStore.result!
+	const schedule = DataSource.current.schedule.result!
 	const dayLessons = schedule.filter(
 		item => item.date.toYYYYMMDD() === DiaryState.day,
 	)

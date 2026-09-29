@@ -1,12 +1,12 @@
 import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { ScheduleItem } from '@/services/mgik/api'
 import { useStyles } from '@/utils/useStyles'
 import { makeAutoObservable, runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
 import { useEffect, useMemo } from 'react'
 import { StyleSheet, TextStyle, View } from 'react-native'
 import { ProgressBar, Text } from 'react-native-paper'
+import { ScheduleItem } from "services/abstract-api-types"
 import { Spacings } from '../../utils/Spacings'
 
 export const LessonProgressStore = new (class {

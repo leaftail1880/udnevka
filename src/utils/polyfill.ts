@@ -3,6 +3,9 @@ import 'react-native-url-polyfill'
 // @ts-expect-error Global variable
 globalThis.__TEST__ ??= false
 
+// @ts-expect-error GLobal variable
+globalThis.Worker = undefined
+
 declare global {
 	interface DateConstructor {
 		week(date: Date): [Date, Date, Date, Date, Date, Date, Date]
@@ -21,7 +24,7 @@ declare global {
 	let debug: (...messages: unknown[]) => void
 }
 
-export {}
+export { }
 
 /* istanbul ignore else */
 if (__DEV__) {

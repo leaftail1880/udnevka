@@ -1,11 +1,9 @@
-import readExcelFile from 'read-excel-file/universal'
+import readXlsxFile from 'read-excel-file/universal'
 import { XSettings } from '../../models/settings'
 import { abortSignalTimeout } from '../../utils/network'
+import { DropdownData, ScheduleItem, ScheduleParams } from '../abstract-api-types'
 import {
-	DropdownData,
 	ParsedTimetable,
-	ScheduleItem,
-	ScheduleParams,
 	expandSchedule,
 	parseTimetable,
 } from './nhmt-parser'
@@ -20,9 +18,7 @@ const DEFAULT_URL = 'https://nhmt.ru/documents/1_2026-2027.xlsx'
  * dates), so `getSchedule` expands it into dated items for a requested range.
  */
 export class NhmtScheduleClient {
-	constructor(
-		private readonly url: string = DEFAULT_URL,
-	) {}
+	constructor(private readonly url: string = DEFAULT_URL) {}
 
 	/** Groups, courses, faculties (specialties) and forms of education. */
 	async getDropdownData(): Promise<DropdownData> {
@@ -34,15 +30,18 @@ export class NhmtScheduleClient {
 	 * Defaults to the current week (Mon-Sun); pass `from`/`to` for another range.
 	 */
 	async getSchedule(params: ScheduleParams): Promise<ScheduleItem[]> {
-		const groupId = Number(params.idGroup)
-		if (!Number.isInteger(groupId)) {
-			throw new Error(`Invalid group id: ${params.idGroup}`)
-		}
 		const parsed = await this.download()
-		if (!parsed.dropdown.groups.some(g => g.id === groupId)) {
-			throw new Error(`Unknown group id: ${groupId}`)
+		const rawId = String(params.groupId)
+
+		const group = parsed.dropdown.groups.find(
+			g => g.name === rawId || g.shortName === rawId || String(g.id) === rawId,
+		)
+
+		if (!group) {
+			throw new Error(`Unknown group id: ${rawId}`)
 		}
-		return expandSchedule(parsed, groupId, params.from, params.to)
+
+		return expandSchedule(parsed, group.id, params.from, params.to)
 	}
 
 	private async download(): Promise<ParsedTimetable> {
@@ -60,7 +59,8 @@ export class NhmtScheduleClient {
 
 		// Pass an ArrayBuffer: React Native's Blob can't be built from binary data.
 		const buffer = await response.arrayBuffer()
-		const result = (await readExcelFile(buffer as any))[0]
+		console.log("RTPE", readXlsxFile)
+		const result = (await readXlsxFile(buffer as any))[0]
 
 		return parseTimetable(result.data)
 	}

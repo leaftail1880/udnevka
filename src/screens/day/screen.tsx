@@ -2,7 +2,6 @@ import SelectModal from '@/components/SelectModal'
 import UpdateDate from '@/components/UpdateDate'
 import { XSettings } from '@/models/settings'
 import { Theme } from '@/models/theme'
-import { ScheduleStore } from '@/services/mgik/store'
 import { runInAction } from 'mobx'
 import { observer } from 'mobx-react-lite'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
@@ -29,6 +28,8 @@ import { DayProps } from 'react-native-calendars/src/calendar/day/index'
 import { MarkingProps } from 'react-native-calendars/src/calendar/day/marking/index'
 import { Text } from 'react-native-paper'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { DataSource } from '../../models/data-source.store'
+import { ScheduleItem } from '../../services/abstract-api-types'
 import { calculateColorFromNumber } from '../../utils/colorFromNumber'
 
 // localization for react-native-calendars
@@ -90,18 +91,18 @@ export default observer(function DiaryScreen(props: XBottomTabScreenProps) {
 			{!DiaryState.edit ? (
 				<ScrollView
 					contentContainerStyle={styles.scrollContentContainer}
-					refreshControl={ScheduleStore.refreshControl}
+					refreshControl={DataSource.current.schedule.refreshControl}
 				>
 					<View style={styles.selectDayView}>
 						<SelectDay />
 					</View>
 					<View style={styles.day}>
-						{ScheduleStore.fallback || <Day {...props} />}
+						{DataSource.current.schedule.fallback || <Day {...props} />}
 					</View>
-					<UpdateDate store={ScheduleStore} />
+					<UpdateDate store={DataSource.current.schedule} />
 				</ScrollView>
 			) : (
-				ScheduleStore.fallback || <EditDiaryDayScreen />
+				DataSource.current.schedule.fallback || <EditDiaryDayScreen />
 			)}
 		</View>
 	)
@@ -182,8 +183,8 @@ const SelectDay = observer(function SelectDay() {
 					dayComponent={CustomDay}
 					closeThreshold={0}
 					markedDates={
-						ScheduleStore.result
-							? (ScheduleStore.result.reduce(
+						DataSource.current.schedule.result
+							? (DataSource.current.schedule.result.reduce(
 									(acc, e) => {
 										const key = e.date
 											.toYYYYMMDD()
@@ -305,5 +306,5 @@ const dayStyles = StyleSheet.create({
 
 export type DiaryLessonProps = {
 	i: number
-	lesson: import('@/services/mgik/api').ScheduleItem
+	lesson: ScheduleItem
 }
