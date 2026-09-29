@@ -1,7 +1,7 @@
 // Pure parsing logic for the NHMT timetable sheet. No network / library imports,
 // so it can be tested directly against rows produced by read-excel-file.
 
-import { CellValue, SheetData } from "read-excel-file/universal"
+import { CellValue, SheetData } from 'read-excel-file/universal'
 
 // ========== Output types (same shape as the edu.mgik.org client) ==========
 
@@ -124,12 +124,15 @@ const SPLIT_GAP = 8
 
 // ========== Helpers ==========
 
-const str = (c: CellValue | null): string => (c === null || c === undefined ? '' : String(c))
+const str = (c: CellValue | null): string =>
+	c === null || c === undefined ? '' : String(c)
 
 const pad2 = (n: number) => String(n).padStart(2, '0')
 
 /** "8.00-8.45\r\n8.55-9.40" (also "18.00-18-45") -> { start: "08:00", end: "09:40" } */
-export function parseTimeRange(text: string): { start: string; end: string } | null {
+export function parseTimeRange(
+	text: string,
+): { start: string; end: string } | null {
 	const matches = [...text.matchAll(/(\d{1,2})\s*[.:\-]\s*(\d{2})/g)]
 	if (matches.length < 2) return null
 	const fmt = (m: RegExpMatchArray) => `${pad2(Number(m[1]))}:${m[2]}`
@@ -264,7 +267,8 @@ export function parseTimetable(rows: SheetData): ParsedTimetable {
 			}
 		}
 	}
-	const semesterStart = semester === 1 ? new Date(year1, 8, 1) : new Date(year1 + 1, 1, 1)
+	const semesterStart =
+		semester === 1 ? new Date(year1, 8, 1) : new Date(year1 + 1, 1, 1)
 
 	// --- groups ---
 	const faculties: Faculty[] = []
@@ -286,7 +290,13 @@ export function parseTimetable(rows: SheetData): ParsedTimetable {
 			faculties.push({ id: facultyId, name: facultyName })
 		}
 		if (course) courses.add(course)
-		groups.push({ id: col, name: code || shortName, shortName, course, facultyId })
+		groups.push({
+			id: col,
+			name: code || shortName,
+			shortName,
+			course,
+			facultyId,
+		})
 	}
 
 	const dropdown: DropdownData = {
@@ -306,14 +316,13 @@ export function parseTimetable(rows: SheetData): ParsedTimetable {
 		if (dayName && DAY_NAMES[dayName]) dayOfWeek = DAY_NAMES[dayName]
 
 		const lessonNumber = Number(row[1])
-		if (!dayOfWeek || !Number.isInteger(lessonNumber) || lessonNumber < 1) continue
+		if (!dayOfWeek || !Number.isInteger(lessonNumber) || lessonNumber < 1)
+			continue
 
-		const time =
-			parseTimeRange(str(row[2])) ??
+		const time = parseTimeRange(str(row[2])) ??
 			LESSON_TIME_SLOTS[lessonNumber - 1] ?? { start: '', end: '' }
 
 		for (const group of groups) {
-			
 			const cell = row[group.id]
 			if (!cell) {
 				continue
@@ -339,7 +348,8 @@ export function parseTimetable(rows: SheetData): ParsedTimetable {
 
 // ========== Expanding the weekly template into dated items ==========
 
-const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
+const startOfDay = (d: Date) =>
+	new Date(d.getFullYear(), d.getMonth(), d.getDate())
 
 /** 1 = Monday ... 7 = Sunday */
 const isoDow = (d: Date) => ((d.getDay() + 6) % 7) + 1
@@ -353,7 +363,13 @@ export function mondayOf(d: Date): Date {
 function combine(date: Date, hhmm: string): Date {
 	const m = hhmm.match(/^(\d{1,2}):(\d{2})$/)
 	if (!m) return startOfDay(date)
-	return new Date(date.getFullYear(), date.getMonth(), date.getDate(), Number(m[1]), Number(m[2]))
+	return new Date(
+		date.getFullYear(),
+		date.getMonth(),
+		date.getDate(),
+		Number(m[1]),
+		Number(m[2]),
+	)
 }
 
 export function expandSchedule(
@@ -363,7 +379,9 @@ export function expandSchedule(
 	to?: Date,
 ): ScheduleItem[] {
 	const start = startOfDay(from ?? mondayOf(new Date()))
-	const end = startOfDay(to ?? new Date(mondayOf(start).getTime() + 6 * 86400000))
+	const end = startOfDay(
+		to ?? new Date(mondayOf(start).getTime() + 6 * 86400000),
+	)
 	if (end < start) return []
 
 	const byDow = new Map<number, TemplateEntry[]>()
@@ -382,8 +400,10 @@ export function expandSchedule(
 	for (let n = 0; cursor <= end && n < MAX_DAYS; n++) {
 		const dow = isoDow(cursor)
 		const date = startOfDay(cursor)
-		const week = Math.round((mondayOf(date).getTime() - semMonday) / (7 * 86400000)) + 1
-		const ymd = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()
+		const week =
+			Math.round((mondayOf(date).getTime() - semMonday) / (7 * 86400000)) + 1
+		const ymd =
+			date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()
 
 		for (const e of byDow.get(dow) ?? []) {
 			items.push({
