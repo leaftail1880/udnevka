@@ -1,12 +1,12 @@
 import readXlsxFile from 'read-excel-file/universal'
 import { XSettings } from '../../models/settings'
 import { abortSignalTimeout } from '../../utils/network'
-import { DropdownData, ScheduleItem, ScheduleParams } from '../abstract-api-types'
 import {
-	ParsedTimetable,
-	expandSchedule,
-	parseTimetable,
-} from './nhmt-parser'
+	DropdownData,
+	ScheduleItem,
+	ScheduleParams,
+} from '../abstract-api-types'
+import { ParsedTimetable, expandSchedule, parseTimetable } from './nhmt-parser'
 
 const DEFAULT_URL = 'https://nhmt.ru/documents/1_2026-2027.xlsx'
 
@@ -57,10 +57,8 @@ export class NhmtScheduleClient {
 			)
 		}
 
-		// Pass an ArrayBuffer: React Native's Blob can't be built from binary data.
-		const buffer = await response.arrayBuffer()
-		console.log("RTPE", readXlsxFile)
-		const result = (await readXlsxFile(buffer as any))[0]
+		const buffer = await response.blob()
+		const result = (await readXlsxFile(buffer))[0]
 
 		return parseTimetable(result.data)
 	}
