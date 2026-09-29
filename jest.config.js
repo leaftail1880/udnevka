@@ -79,5 +79,4 @@ export default {
 		__DEV__: true,
 	},
 	cacheDirectory: '.jest',
-	prettierPath: require.resolve('prettier-2'),
 }
