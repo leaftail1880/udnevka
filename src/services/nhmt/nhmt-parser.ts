@@ -16,20 +16,9 @@ export type SheetData = CellValue[][]
 
 // ========== Parsed template (weekly recurring timetable) ==========
 
-export interface TemplateEntry {
-	groupId: number
-	dayOfWeek: number
-	lessonNumber: number
-	/** "HH:MM" */
+export type TemplateEntry = Omit<ScheduleItem, "date" | "week" | "id" | "lessonType" | "startTime" | "endTime" | "teacherComment" | "lessonComment"> & {
 	start: string
-	/** "HH:MM" */
 	end: string
-	subgroup: number
-	discipline: string
-	teacherName: string
-	auditoriumName: string
-	auditoriumShortName: string
-	building: string
 }
 
 export interface ParsedTimetable {
@@ -320,6 +309,7 @@ export function expandSchedule(
 	groupId: number,
 	from?: Date,
 	to?: Date,
+	overrides?: Map<string, TemplateEntry[]>,
 ): ScheduleItem[] {
 	const start = startOfDay(from ?? mondayOf(new Date()))
 	const end = startOfDay(
@@ -348,7 +338,22 @@ export function expandSchedule(
 		const ymd =
 			date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate()
 
-		for (const e of byDow.get(dow) ?? []) {
+		// A replacement sheet lists only the pairs that differ for the day.
+		// For each lesson number it mentions, use the replacement; for others,
+		// keep the regular template entries.
+		const replacement = overrides?.get(dateKey(date))
+		let dayEntries: TemplateEntry[]
+		if (replacement) {
+			const replaced = new Set(replacement.map(e => e.lessonNumber))
+			dayEntries = [
+				...(byDow.get(dow) ?? []).filter(e => !replaced.has(e.lessonNumber)),
+				...replacement,
+			]
+		} else {
+			dayEntries = byDow.get(dow) ?? []
+		}
+
+		for (const e of dayEntries) {
 			items.push({
 				id: ymd * 100000 + e.groupId * 100 + e.lessonNumber * 10 + e.subgroup,
 				discipline: e.discipline,
@@ -378,4 +383,153 @@ export function expandSchedule(
 			a.lessonNumber - b.lessonNumber ||
 			a.subgroup - b.subgroup,
 	)
+}
+
+
+// ========== Replacement schedule ==========
+
+/** "yyyy-mm-dd" key used to index overrides by date. */
+export const dateKey = (date: Date): string => {
+const d = new Date(
+					date.getFullYear(),
+					date.getMonth(),
+					date.getDate(),
+				)
+return	`${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`
+}
+
+/**
+ * Extract lesson numbers from a "ПАРЫ" cell.
+ * Accepts: 3 | "3" | "3.4" | "1,2,3" | 3.4 (as a number).
+ * Splitting on `.` and `,` handles every form seen in the wild, and stays
+ * valid if the sheet later switches separators.
+ */
+function parsePairNumbers(cell: CellValue): number[] {
+	if (typeof cell === 'number' && Number.isInteger(cell) && cell >= 1) {
+		return [cell]
+	}
+	const text = str(cell).trim()
+	if (!text) return []
+	const parts = text.split(/[.,]/).map(s => Number(s.trim()))
+	const valid = parts.filter(n => Number.isInteger(n) && n >= 1 && n <= 6)
+	return [...new Set(valid)].sort((a, b) => a - b)
+}
+
+/**
+ * Time slots live at the bottom of the sheet as: [null, pairNumber, timeRange].
+ * We collect them up-front so lesson rows can be resolved in any order.
+ */
+function collectTimeSlots(
+	rows: SheetData,
+): Map<number, { start: string; end: string }> {
+	const slots = new Map<number, { start: string; end: string }>()
+	for (const row of rows) {
+		if (!row) continue
+		const n = Number(row[1])
+		if (!Number.isInteger(n) || n < 1 || n > 6) continue
+		const time = parseTimeRange(str(row[2]))
+		if (time) slots.set(n, time)
+	}
+	return slots
+}
+
+/**
+ * Match a "group cell" (e.g. "11 ССА\n(26-СО-130)") to one of the groups
+ * produced by `parseTimetable`. We strip the parenthesised code and all
+ * whitespace, so both `shortName` ("11ССА") and `name` ("26-СО-130") match
+ * regardless of the exact spacing in the sheet.
+ */
+function matchGroup(cell: CellValue, groups: Group[]): Group | null {
+	const text = str(cell).trim()
+	if (!text) return null
+	const codeMatch = text.match(/\(([^)]+)\)/)
+	const code = codeMatch ? codeMatch[1].trim() : ''
+	const short = text.replace(/\([^)]*\)/g, '').replace(/\s+/g, '').trim()
+	return (
+		groups.find(
+			g =>
+				(code && g.name === code) ||
+				(code && g.shortName === code) ||
+				(short && g.shortName === short) ||
+				(short && g.name === short),
+		) ?? null
+	)
+}
+
+/**
+ * Parse a replacement schedule sheet (замена занятий) into `TemplateEntry[]`.
+ *
+ * The date is supplied by the caller — the title is *not* parsed for it,
+ * since its wording/format may change independently of the structure.
+ *
+ * Structure (positional — no reliance on header text):
+ *   col 0: group name (filled only on the first row of a group's block)
+ *   col 1: pair number(s)
+ *   col 2: scheduled discipline
+ *   col 3: replacement discipline ("не будет" means cancelled)
+ *   col 4: teacher
+ *   col 5: room
+ *
+ * Row classification is structural:
+ *   - a row is a lesson row iff col 1 parses to a valid pair number;
+ *   - col 0 is scanned for a group reference on every row, so group header
+ *     rows that also carry a lesson are still picked up.
+ */
+export function parseReplacementSheet(
+	rows: SheetData,
+	date: Date,
+	groups: Group[],
+): TemplateEntry[] {
+	const dayOfWeek = isoDow(date)
+	const timeSlots = collectTimeSlots(rows)
+	const entries: TemplateEntry[] = []
+	let currentGroup: Group | null = null
+
+	for (const row of rows) {
+		if (!row) continue
+
+		const pairs = parsePairNumbers(row[1])
+
+		if (pairs.length === 0) {
+			// Not a lesson row — maybe a group header that stands alone.
+			const group = matchGroup(row[0], groups)
+			if (group) currentGroup = group
+			continue
+		}
+
+		const group = matchGroup(row[0], groups) ?? currentGroup
+		if (!group) continue
+		currentGroup = group
+
+		const scheduled = str(row[2]).trim()
+		const replacement = str(row[3]).trim()
+		// When col 3 is empty the scheduled subject is kept as-is.
+		const discipline = replacement || scheduled
+		if (!discipline) continue
+
+		const teacherName = str(row[4]).trim()
+		const auditoriumName = cleanRoom(str(row[5]).trim())
+		const { short, building } = roomParts(auditoriumName)
+
+		for (const lessonNumber of pairs) {
+			const slot =
+				timeSlots.get(lessonNumber) ??
+				LESSON_TIME_SLOTS[lessonNumber - 1] ?? { start: '', end: '' }
+			entries.push({
+				groupId: group.id,
+				dayOfWeek,
+				lessonNumber,
+				start: slot.start,
+				end: slot.end,
+				subgroup: 0,
+				discipline,
+				teacherName,
+				auditoriumName,
+				auditoriumShortName: short,
+				building,
+			})
+		}
+	}
+
+	return entries
 }

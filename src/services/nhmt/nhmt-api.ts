@@ -9,11 +9,17 @@ import {
 import {
 	ParsedTimetable,
 	SheetData,
+	TemplateEntry,
+	dateKey,
 	expandSchedule,
+	parseReplacementSheet,
 	parseTimetable,
 } from './nhmt-parser'
 
 const DEFAULT_URL = 'https://nhmt.ru/documents/1_2026-2027.xlsx'
+
+const GET_ZAMENA_URL = (date = '06-10-2026') =>
+	`http://zamena.nhmt.ru/zamena/spo/${date}.xls`
 
 /**
  * Client for the NHMT timetable workbook. Same public surface as the
@@ -51,11 +57,48 @@ export class NhmtScheduleClient {
 		const group = parsed.dropdown.groups.find(
 			g => g.name === rawId || g.shortName === rawId || String(g.id) === rawId,
 		)
-
 		if (!group) {
 			throw new Error(`Unknown group id: ${rawId}`)
 		}
-		return expandSchedule(parsed, group.id, params.from, params.to)
+
+		const overrides = new Map<string, TemplateEntry[]>()
+		const replacements = []
+		for (let i = -2; i < 2; i++) {
+			const date = new Date()
+			date.setDate(date.getDate() + i)
+			replacements.push({
+				url: GET_ZAMENA_URL(dateKey(date)),
+				date,
+			})
+		}
+
+		if (replacements.length) {
+			console.log(replacements)
+			const fetched = await Promise.allSettled(
+				replacements.map(async source => {
+					const rows = await this.fetchRows(source.url)
+					const all = parseReplacementSheet(
+						rows,
+						source.date,
+						parsed.dropdown.groups,
+					)
+					return {
+						date: source.date,
+						entries: all.filter(e => e.groupId === group.id),
+					}
+				}),
+			)
+			for (const result of fetched) {
+				if (result.status === 'fulfilled') {
+					const { date, entries } = result.value
+					overrides.set(dateKey(date), entries)
+				} else {
+					console.log('Failed to fetch', result.reason)
+				}
+			}
+		}
+
+		return expandSchedule(parsed, group.id, params.from, params.to, overrides)
 	}
 
 	// ---- private ----
@@ -74,8 +117,14 @@ export class NhmtScheduleClient {
 	}
 
 	private async download(): Promise<ParsedTimetable> {
+		const rows = await this.fetchRows(this.url)
+		return parseTimetable(rows)
+	}
+
+	/** Fetch a workbook (.xls or .xlsx) and return the first sheet's rows. */
+	private async fetchRows(url: string): Promise<SheetData> {
 		const signal = abortSignalTimeout(XSettings.networkTimeout)
-		const response = await fetch(this.url, {
+		const response = await fetch(url, {
 			method: 'GET',
 			// @ts-expect-error nodejs vs react types conflict
 			signal,
@@ -85,28 +134,21 @@ export class NhmtScheduleClient {
 				`Request failed with status ${response.status}: ${response.statusText}`,
 			)
 		}
-
 		const buffer = await response.arrayBuffer()
 		const workbook = XLSX.read(new Uint8Array(buffer), {
 			type: 'array',
 			cellDates: true,
 		})
-
 		const sheetName = workbook.SheetNames[0]
 		if (!sheetName) {
 			throw new Error('Workbook contains no sheets')
 		}
-
-		// `header: 1` produces an array-of-arrays, matching the old `sheet.data`.
-		// `defval: null` keeps holes filled so column indices stay stable.
-		const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+		return XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
 			header: 1,
 			raw: true,
 			defval: null,
 			blankrows: true,
 		}) as SheetData
-
-		return parseTimetable(rows)
 	}
 }
 
