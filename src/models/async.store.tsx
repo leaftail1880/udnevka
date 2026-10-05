@@ -77,7 +77,7 @@ export class AsyncCacheStore {
 	constructor() {
 		makeAutoObservable(this, {}, { autoBind: true })
 		makeReloadPersistable(this, {
-			name: 'async-cache-v2',
+			name: 'async-cache-v3',
 			properties: [
 				{
 					key: 'cache',
