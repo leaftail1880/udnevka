@@ -10,8 +10,9 @@ import { runInAction } from 'mobx'
 import { PersistStoreMap } from 'mobx-persist-store'
 import { observer } from 'mobx-react-lite'
 import { ScrollView, View } from 'react-native'
-import { List, Text } from 'react-native-paper'
+import { Button, List, Text } from 'react-native-paper'
 import { DatePickerInput } from 'react-native-paper-dates'
+import { asyncCache } from '../../../models/async.store'
 import { ExportImportSettings } from './ExportSettings'
 
 export default observer(function Appearance() {
@@ -67,6 +68,7 @@ export default observer(function Appearance() {
 			<List.Section title="Хранилище">
 				<ExportImportSettings />
 				<SizeOfCache />
+				<Button onPress={() => asyncCache.cache = {}}>Clear cache</Button>
 				<Stores />
 			</List.Section>
 		</ScrollView>
