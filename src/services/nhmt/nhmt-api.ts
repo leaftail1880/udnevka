@@ -19,7 +19,7 @@ import {
 const DEFAULT_URL = 'https://nhmt.ru/documents/1_2026-2027.xlsx'
 
 const GET_ZAMENA_URL = (date = '06-10-2026') =>
-	`http://zamena.nhmt.ru/zamena/spo/${date}.xls`
+	`https://zamena.nhmt.ru/zamena/spo/${date}.xls`
 
 /**
  * Client for the NHMT timetable workbook. Same public surface as the
