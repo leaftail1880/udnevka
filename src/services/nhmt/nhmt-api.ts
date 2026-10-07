@@ -73,29 +73,30 @@ export class NhmtScheduleClient {
 		}
 
 		if (replacements.length) {
-			console.log(replacements)
-			const fetched = await Promise.allSettled(
+			await Promise.all(
 				replacements.map(async source => {
-					const rows = await this.fetchRows(source.url)
-					const all = parseReplacementSheet(
-						rows,
-						source.date,
-						parsed.dropdown.groups,
-					)
-					return {
-						date: source.date,
-						entries: all.filter(e => e.groupId === group.id),
+					try {
+						const rows = await this.fetchRows(source.url)
+						const all = parseReplacementSheet(
+							rows,
+							source.date,
+							parsed.dropdown.groups,
+						)
+						overrides.set(
+							dateKey(source.date),
+							all.filter(e => e.groupId === group.id),
+						)
+					} catch (e) {
+						if (e instanceof NhmtNetworkError && e.status === 404) {
+							return // Ignore
+						} else
+							throw new Error(
+								`Failed to get replacement for ${dateKey(source.date)}: ${e}`,
+								{ cause: e },
+							)
 					}
 				}),
 			)
-			for (const result of fetched) {
-				if (result.status === 'fulfilled') {
-					const { date, entries } = result.value
-					overrides.set(dateKey(date), entries)
-				} else {
-					console.log('Failed to fetch', result.reason)
-				}
-			}
 		}
 
 		return expandSchedule(parsed, group.id, params.from, params.to, overrides)
@@ -130,8 +131,9 @@ export class NhmtScheduleClient {
 			signal,
 		})
 		if (!response.ok) {
-			throw new Error(
+			throw new NhmtNetworkError(
 				`Request failed with status ${response.status}: ${response.statusText}`,
+				response.status,
 			)
 		}
 		const buffer = await response.arrayBuffer()
@@ -149,6 +151,15 @@ export class NhmtScheduleClient {
 			defval: null,
 			blankrows: true,
 		}) as SheetData
+	}
+}
+
+class NhmtNetworkError extends Error {
+	constructor(
+		message: string,
+		readonly status: number,
+	) {
+		super(message)
 	}
 }
 

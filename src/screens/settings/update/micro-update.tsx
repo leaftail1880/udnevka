@@ -3,31 +3,20 @@ import { Spacings } from '@/utils/Spacings'
 import { ModalAlert } from '@/utils/Toast'
 import * as Updates from 'expo-updates'
 import { observer } from 'mobx-react-lite'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { View } from 'react-native'
 import { Button, HelperText, Text, TouchableRipple } from 'react-native-paper'
+import { stringifyNetworkErrorLike } from '../../../utils/network'
 
 export default observer(function MicroUpdateId() {
 	const updateId = Updates.updateId?.slice(-6) ?? 'из сборки'
 	const { isUpdateAvailable } = Updates.useUpdates()
-
 	const update = isUpdateAvailable
 
-	const text = (
-		<Text
-			onPress={openModal}
-			style={{
-				color: update ? Theme.colors.error : Theme.colors.onSecondaryContainer,
+	const openModal = () =>
+		ModalAlert.show('Микрообновления', <MicroUpdateModal />)
 
-				fontWeight: update ? 'bold' : 'normal',
-			}}
-		>
-			{update && 'Обновление: '}
-			{updateId}
-		</Text>
-	)
-
-	if (update)
+	if (update) {
 		return (
 			<TouchableRipple
 				onPress={openModal}
@@ -38,100 +27,104 @@ export default observer(function MicroUpdateId() {
 					borderRadius: Theme.roundness,
 				}}
 			>
-				{text}
+				<Text
+					style={{
+						color: Theme.colors.error,
+						fontWeight: 'bold',
+					}}
+				>
+					Обновление: {updateId}
+				</Text>
 			</TouchableRipple>
 		)
-	return text
+	}
+
+	return (
+		<Text
+			onPress={openModal}
+			style={{
+				color: Theme.colors.onSecondaryContainer,
+			}}
+		>
+			{updateId}
+		</Text>
+	)
 })
-
-enum UpdateCheckState {
-	Default,
-	NotAvailable,
-	Available,
-	Error,
-}
-
-const states: Record<UpdateCheckState, string> = {
-	[UpdateCheckState.Default]: 'Проверить наличие микрообновлений',
-	[UpdateCheckState.Error]: 'Ошибка',
-	[UpdateCheckState.Available]: 'Проверить наличие микрообновлений',
-	[UpdateCheckState.NotAvailable]: 'Нет обновлений',
-}
-
-const openModal = () => ModalAlert.show('Микрообновления', <MicroUpdateModal />)
 
 const MicroUpdateModal = observer(function MicroUpdateModal() {
 	const { currentlyRunning, isUpdateAvailable, isUpdatePending } =
 		Updates.useUpdates()
 
-	useEffect(() => {
-		if (isUpdatePending) {
-			// Update has successfully downloaded
-			Updates.reloadAsync()
-		}
-	}, [isUpdatePending])
+	const [loading, setLoading] = useState(false)
+	const [info, setInfo] = useState<string | null>(null)
+	const [error, setError] = useState<string | null>(null)
 
-	// Show whether or not we are running embedded code or an update
 	const runTypeMessage = currentlyRunning.isEmbeddedLaunch
 		? 'Запущено из сборки'
 		: 'Запущено из микрообновления'
 
-	const [state, setState] = useState(UpdateCheckState.Default)
+	const run = async (action: () => Promise<void>) => {
+		if (loading) return
 
-	const timeout = useRef<number | undefined>(undefined)
-	useEffect(() => {
-		if (timeout.current) clearTimeout(timeout.current)
-		if (state !== UpdateCheckState.Default) {
-			timeout.current = setTimeout(
-				() => setState(UpdateCheckState.Default),
-				5000,
-			) as unknown as number
-		}
-	}, [state])
+		setLoading(true)
+		setInfo(null)
+		setError(null)
 
-	async function wrap<T>(promise: Promise<T>, onResolve: (t: T) => void) {
 		try {
-			onResolve(await promise)
+			await action()
 		} catch (e) {
-			setState(UpdateCheckState.Error)
+			setError(stringifyNetworkErrorLike(e))
+		} finally {
+			setLoading(false)
 		}
 	}
+
+	const handleCheck = () =>
+		run(async () => {
+			const result = await Updates.checkForUpdateAsync()
+			setInfo(result.isAvailable ? 'Доступно обновление' : 'Нет обновлений')
+		})
+
+	const handleDownload = () =>
+		run(async () => {
+			const result = await Updates.fetchUpdateAsync()
+
+			if (result.isNew || result.isRollBackToEmbedded) {
+				setInfo('Обновление загружено, перезапускаем…')
+				await Updates.reloadAsync()
+			} else {
+				setInfo('Нет обновлений')
+			}
+		})
+
+	const handleReload = () =>
+		run(async () => {
+			setInfo('Перезапускаем…')
+			await Updates.reloadAsync()
+		})
+
+	const action = isUpdatePending
+		? { text: 'Перезапустить', onPress: handleReload }
+		: isUpdateAvailable
+			? { text: 'Скачать и запустить микрообнову', onPress: handleDownload }
+			: { text: 'Проверить наличие обновлений', onPress: handleCheck }
 
 	return (
 		<View style={{ gap: Spacings.s2 }}>
 			<Text>{runTypeMessage}</Text>
-			{!isUpdateAvailable ? (
-				<Button
-					onPress={() =>
-						wrap(Updates.checkForUpdateAsync(), e =>
-							setState(
-								e.isAvailable
-									? UpdateCheckState.Available
-									: UpdateCheckState.NotAvailable,
-							),
-						)
-					}
-					style={{ backgroundColor: Theme.colors.secondaryContainer }}
-				>
-					<HelperText type="info">{states[state]}</HelperText>
-				</Button>
-			) : (
-				<Button
-					style={{ backgroundColor: Theme.colors.secondaryContainer }}
-					onPress={() =>
-						wrap(Updates.fetchUpdateAsync(), result => {
-							if (result.isNew || result.isRollBackToEmbedded) {
-								setState(UpdateCheckState.Available)
-								Updates.reloadAsync()
-							} else {
-								setState(UpdateCheckState.NotAvailable)
-							}
-						})
-					}
-				>
-					<HelperText type="info">Скачать и запустить микрообнову</HelperText>
-				</Button>
-			)}
+
+			<Button
+				mode="contained"
+				loading={loading}
+				disabled={loading}
+				onPress={action.onPress}
+			>
+				{action.text}
+			</Button>
+
+			{!!info && <HelperText type="info">{info}</HelperText>}
+			{!!error && <HelperText type="error">{error}</HelperText>}
+			<HelperText type="info">Микрообновления - обновления, не требующие переустановки приложения. Микрообновления применяются сами при перезапуске приложения, в этом меню их наличие можно проверить самостоятельно. Чаще всего микрообновления - это незначительные изменения вроде починки багов.</HelperText>
 		</View>
 	)
 })
